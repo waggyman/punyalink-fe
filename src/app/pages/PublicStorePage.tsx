@@ -10,6 +10,7 @@ import { readStoreBranding } from "@/lib/store-branding-local";
 import { ApiError, fetchLinks } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import type { Link } from "@/lib/types";
+import { getBaseDomain } from "@/lib/tenant";
 
 const DEFAULT_AVATAR =
   "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=400&h=400&fit=crop";
@@ -83,6 +84,7 @@ export function PublicStorePage({ tenant }: PublicStorePageProps) {
   };
 
   const branding = useMemo(() => readStoreBranding(tenant), [tenant]);
+  const baseDomain = getBaseDomain();
 
   const storeTitle =
     branding.title.trim() ||
@@ -90,7 +92,7 @@ export function PublicStorePage({ tenant }: PublicStorePageProps) {
 
   const bio =
     branding.description.trim() ||
-    `Links from ${tenant}.punyalink.id`;
+    `Links from ${tenant}.${baseDomain}`;
 
   const avatarSrc = branding.profilePicture?.trim() || DEFAULT_AVATAR;
   const bannerSrc = branding.banner?.trim() || DEFAULT_BANNER_BG;

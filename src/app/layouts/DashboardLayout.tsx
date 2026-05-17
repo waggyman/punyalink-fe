@@ -12,6 +12,7 @@ import {
 
 import { useDashboardI18n } from "@/app/dashboard-i18n/use-dashboard-i18n";
 import { useAuth } from "@/lib/auth";
+import { getBaseDomain } from "@/lib/tenant";
 import { Button } from "../components/ui/button";
 import { cn } from "../components/ui/utils";
 
@@ -22,21 +23,22 @@ type DashboardLayoutProps = {
 export function DashboardLayout({ tenant }: DashboardLayoutProps) {
   const { logout } = useAuth();
   const { locale, setLocale, t } = useDashboardI18n();
+  const baseDomain = getBaseDomain();
 
   return (
-    <div className="min-h-screen overflow-x-hidden bg-gradient-to-b from-muted/80 via-muted/40 to-background">
-      <header className="relative overflow-hidden border-b bg-background/80 backdrop-blur-md">
+    <div className="min-h-screen overflow-x-hidden bg-gradient-to-br from-purple-50/90 via-background to-sky-50/45">
+      <header className="relative overflow-hidden border-b border-violet-200/25 bg-background/85 backdrop-blur-md">
         <div
-          className="pointer-events-none absolute -right-20 -top-24 h-64 w-64 rounded-full opacity-60 blur-3xl"
+          className="pointer-events-none absolute -right-20 -top-24 h-64 w-64 rounded-full opacity-55 blur-3xl"
           style={{
             background:
-              "radial-gradient(circle at center, oklch(0.7 0.15 264), transparent 65%)",
+              "radial-gradient(circle at center, oklch(0.78 0.14 294), transparent 68%)",
           }}
         />
         <div className="relative mx-auto flex min-w-0 max-w-6xl flex-col gap-6 px-3 py-8 sm:px-4 sm:py-10 md:flex-row md:items-end md:justify-between">
           <div className="min-w-0 space-y-3">
-            <div className="inline-flex items-center gap-2 rounded-full border bg-muted/60 px-3 py-1 text-xs font-medium text-muted-foreground">
-              <Sparkles className="size-3 text-amber-500" />
+            <div className="inline-flex items-center gap-2 rounded-full border border-violet-200/40 bg-violet-50/70 px-3 py-1 text-xs font-medium text-muted-foreground dark:border-violet-500/20 dark:bg-violet-950/40">
+              <Sparkles className="size-3 text-violet-600 dark:text-violet-400" />
               {t.storeOverview}
             </div>
             <h1 className="text-2xl font-bold tracking-tight sm:text-3xl md:text-4xl">
@@ -45,7 +47,7 @@ export function DashboardLayout({ tenant }: DashboardLayoutProps) {
             <p className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-muted-foreground">
               <Globe className="size-3.5 shrink-0" />
               <span className="break-all font-mono text-xs sm:text-sm">
-                {tenant}.punyalink.id
+                {tenant}.{baseDomain}
               </span>
               <span className="hidden sm:inline">·</span>
               <span className="hidden text-balance sm:inline">

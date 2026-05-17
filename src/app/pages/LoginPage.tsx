@@ -2,6 +2,8 @@ import { FormEvent, useState } from "react";
 import { Link, Navigate, useNavigate, useSearchParams } from "react-router";
 import { ApiError, login as loginApi } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
+import { getBaseDomain } from "@/lib/tenant";
+import { BrandedAuthShell } from "../components/BrandedAuthShell";
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
 import { Label } from "../components/ui/label";
@@ -17,6 +19,7 @@ export function LoginPage() {
   const { tenant, isAuthenticated, login } = useAuth();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
+  const baseDomain = getBaseDomain();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -50,12 +53,25 @@ export function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center px-4 bg-muted/30">
-      <Card className="w-full max-w-md">
-        <CardHeader>
-          <CardTitle>Store login</CardTitle>
-          <CardDescription>
-            Sign in to manage {tenant}.punyalink.id
+    <BrandedAuthShell
+      footerLink={
+        <Link
+          to="/"
+          className="text-muted-foreground underline underline-offset-4 hover:text-foreground"
+        >
+          Back to public storefront
+        </Link>
+      }
+    >
+      <Card className="w-full max-w-md border border-violet-200/40 bg-card/95 shadow-xl shadow-violet-950/10 backdrop-blur-md">
+        <CardHeader className="space-y-1">
+          <CardTitle className="text-xl sm:text-2xl">Sign in</CardTitle>
+          <CardDescription className="text-pretty leading-relaxed">
+            Manage links and storefront settings for{" "}
+            <span className="font-medium text-foreground">
+              {tenant}.{baseDomain}
+            </span>
+            .
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -87,17 +103,12 @@ export function LoginPage() {
                 {error}
               </p>
             )}
-            <Button type="submit" className="w-full" disabled={submitting}>
+            <Button type="submit" className="w-full shadow-md" disabled={submitting}>
               {submitting ? "Signing in…" : "Sign in"}
             </Button>
           </form>
-          <p className="mt-4 text-center text-sm text-muted-foreground">
-            <Link to="/" className="underline hover:text-foreground">
-              Back to store page
-            </Link>
-          </p>
         </CardContent>
       </Card>
-    </div>
+    </BrandedAuthShell>
   );
 }

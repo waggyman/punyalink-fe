@@ -35,6 +35,7 @@ import type { DashboardStrings } from "@/app/dashboard-i18n/dashboard-messages";
 import { ApiError, fetchLinks } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import type { Link as StoreLink } from "@/lib/types";
+import { getBaseDomain } from "@/lib/tenant";
 import { Button } from "../components/ui/button";
 import { Badge } from "../components/ui/badge";
 import {
@@ -101,6 +102,7 @@ type EngagementDatum = {
 export function DashboardPage({ tenant }: DashboardPageProps) {
   const { token } = useAuth();
   const { t } = useDashboardI18n();
+  const baseDomain = getBaseDomain();
   const [links, setLinks] = useState<StoreLink[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -470,7 +472,7 @@ export function DashboardPage({ tenant }: DashboardPageProps) {
                     className="w-fit max-w-full shrink-0 break-all text-xs font-normal"
                   >
                     <Globe className="mr-1 size-3.5 shrink-0" />
-                    {`${tenant}.punyalink.id/{slug}`}
+                    {`${tenant}.${baseDomain}/{slug}`}
                   </Badge>
                 </div>
               </CardHeader>

@@ -9,6 +9,7 @@ import {
 } from "@/lib/api";
 import { validateStoreSubdomain } from "@/lib/constants";
 import { getBaseDomain, getStoreLoginUrl } from "@/lib/tenant";
+import { BrandedAuthShell } from "../components/BrandedAuthShell";
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
 import { Label } from "../components/ui/label";
@@ -189,13 +190,22 @@ export function RegisterPage() {
     : null;
 
   return (
-    <div className="min-h-screen flex items-center justify-center px-4 py-10 bg-muted/30">
-      <Card className="w-full max-w-md">
-        <CardHeader>
-          <CardTitle>
+    <BrandedAuthShell
+      footerLink={
+        <Link
+          to="/"
+          className="text-muted-foreground underline underline-offset-4 hover:text-foreground"
+        >
+          Back to home
+        </Link>
+      }
+    >
+      <Card className="w-full max-w-md border border-violet-200/40 bg-card/95 shadow-xl shadow-violet-950/10 backdrop-blur-md">
+        <CardHeader className="space-y-1">
+          <CardTitle className="text-xl sm:text-2xl">
             {step === "form" ? "Create your store" : "Verify your email"}
           </CardTitle>
-          <CardDescription>
+          <CardDescription className="text-pretty leading-relaxed">
             {step === "form"
               ? `Pick a subdomain on ${baseDomain} and your owner account details.`
               : `We sent a code to ${email}. Enter it below with a password for your account.`}
@@ -263,7 +273,7 @@ export function RegisterPage() {
                   </p>
                 )}
               </div>
-              <p className="text-xs text-muted-foreground rounded-md bg-muted/50 p-3">
+              <p className="text-xs text-muted-foreground rounded-md border border-violet-200/30 bg-violet-50/60 p-3 dark:bg-violet-950/30">
                 Email delivery may be disabled in some API setups. If you do not
                 receive a code, check your backend logs or database for the OTP
                 while developing.
@@ -275,7 +285,7 @@ export function RegisterPage() {
               )}
               <Button
                 type="submit"
-                className="w-full"
+                className="w-full shadow-md"
                 disabled={
                   submitting ||
                   !!subdomainIssue ||
@@ -339,7 +349,7 @@ export function RegisterPage() {
                   {error}
                 </p>
               )}
-              <Button type="submit" className="w-full" disabled={submitting}>
+              <Button type="submit" className="w-full shadow-md" disabled={submitting}>
                 {submitting ? "Verifying…" : "Verify and open login"}
               </Button>
               <Button
@@ -354,13 +364,8 @@ export function RegisterPage() {
             </form>
           )}
 
-          <p className="text-center text-sm text-muted-foreground pt-2 border-t">
-            <Link to="/" className="underline hover:text-foreground">
-              Back to home
-            </Link>
-          </p>
         </CardContent>
       </Card>
-    </div>
+    </BrandedAuthShell>
   );
 }
