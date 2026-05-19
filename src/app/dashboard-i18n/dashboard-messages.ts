@@ -74,6 +74,12 @@ export type DashboardStrings = {
   navLinks: string;
   profilePageTitle: string;
   profilePageDescription: string;
+  profileSectionOwner: string;
+  profileSectionOwnerHint: string;
+  profileSectionStore: string;
+  profileSectionStoreHint: string;
+  fieldOwnerName: string;
+  fieldOwnerEmail: string;
   fieldStoreTitle: string;
   fieldStoreDescription: string;
   fieldProfilePicture: string;
@@ -87,9 +93,13 @@ export type DashboardStrings = {
   profileClearBanner: string;
   profileSave: string;
   profileSaving: string;
+  profileUploading: string;
   profileToastSaved: string;
   profileToastSavedLocally: string;
   profileToastSaveFailed: string;
+  profileToastLoadFailed: string;
+  profileToastImageUploaded: string;
+  profileOwnerNameTooShort: string;
   profileUploadTooLarge: (maxKb: number) => string;
   linksPageTitle: string;
   linksPageDescription: string;
@@ -208,11 +218,19 @@ export const dashboardLocales: Record<DashboardLocale, DashboardStrings> = {
     navLinks: "Links",
     profilePageTitle: "Store profile",
     profilePageDescription:
-      "Set your public page title, description, avatar, and banner image. Saves to your storefront when APIs are available and always mirrors locally in your browser for instant preview.",
+      "Update your owner account and public storefront. Images upload immediately; text fields save together.",
+    profileSectionOwner: "Owner account",
+    profileSectionOwnerHint:
+      "Your display name and avatar appear on the public storefront.",
+    profileSectionStore: "Public storefront",
+    profileSectionStoreHint:
+      "Title, description, and background shown on your store homepage.",
+    fieldOwnerName: "Display name",
+    fieldOwnerEmail: "Email",
     fieldStoreTitle: "Store title",
     fieldStoreDescription: "Store description",
     fieldProfilePicture: "Profile picture",
-    fieldBanner: "Banner",
+    fieldBanner: "Background image",
     uploadPickImage: "Choose image",
     profilePictureUrlPlaceholder: "Or paste image URL (https://…)",
     bannerUrlPlaceholder: "Or paste banner URL (https://…)",
@@ -220,14 +238,18 @@ export const dashboardLocales: Record<DashboardLocale, DashboardStrings> = {
     bannerPreviewAlt: "Banner preview",
     profileClearPicture: "Clear picture",
     profileClearBanner: "Clear banner",
-    profileSave: "Save storefront",
+    profileSave: "Save text fields",
     profileSaving: "Saving…",
-    profileToastSaved: "Storefront settings saved",
+    profileUploading: "Uploading…",
+    profileToastSaved: "Profile saved",
     profileToastSavedLocally:
       "Saved locally in this browser. Connect a store PATCH API for server sync.",
-    profileToastSaveFailed: "Could not save storefront settings",
+    profileToastSaveFailed: "Could not save profile",
+    profileToastLoadFailed: "Could not load profile",
+    profileToastImageUploaded: "Image uploaded",
+    profileOwnerNameTooShort: "Display name must be at least 2 characters.",
     profileUploadTooLarge: (maxKb) =>
-      `File is too large (max ~${maxKb} KB). Use a smaller image or paste a URL.`,
+      `File is too large (max ~${maxKb} KB). Choose a smaller image.`,
     linksPageTitle: "Manage links",
     linksPageDescription:
       "Create short paths on your subdomain, point them to destinations, and control storefront visibility.",
@@ -354,11 +376,19 @@ export const dashboardLocales: Record<DashboardLocale, DashboardStrings> = {
     navLinks: "Tautan",
     profilePageTitle: "Profil toko",
     profilePageDescription:
-      "Atur judul halaman publik, deskripsi, avatar, dan banner. Disimpan di server jika API tersedia, dan dicerminkan lokal di browser untuk pratinjau cepat.",
+      "Perbarui akun pemilik dan vitrin publik. Gambar diunggah langsung; teks disimpan bersama.",
+    profileSectionOwner: "Akun pemilik",
+    profileSectionOwnerHint:
+      "Nama tampilan dan avatar Anda muncul di halaman toko publik.",
+    profileSectionStore: "Vitrin publik",
+    profileSectionStoreHint:
+      "Judul, deskripsi, dan latar belakang di halaman utama toko.",
+    fieldOwnerName: "Nama tampilan",
+    fieldOwnerEmail: "Email",
     fieldStoreTitle: "Judul toko",
     fieldStoreDescription: "Deskripsi toko",
     fieldProfilePicture: "Foto profil",
-    fieldBanner: "Banner",
+    fieldBanner: "Gambar latar",
     uploadPickImage: "Pilih gambar",
     profilePictureUrlPlaceholder: "Atau tempel URL gambar (https://…)",
     bannerUrlPlaceholder: "Atau tempel URL banner (https://…)",
@@ -366,14 +396,18 @@ export const dashboardLocales: Record<DashboardLocale, DashboardStrings> = {
     bannerPreviewAlt: "Pratinjau banner",
     profileClearPicture: "Hapus foto",
     profileClearBanner: "Hapus banner",
-    profileSave: "Simpan vitrin",
+    profileSave: "Simpan teks",
     profileSaving: "Menyimpan…",
-    profileToastSaved: "Pengaturan vitrin disimpan",
+    profileUploading: "Mengunggah…",
+    profileToastSaved: "Profil disimpan",
     profileToastSavedLocally:
       "Disimpan lokal di browser ini. Tambahkan PATCH store pada API untuk sinkron server.",
-    profileToastSaveFailed: "Tidak dapat menyimpan pengaturan vitrin",
+    profileToastSaveFailed: "Tidak dapat menyimpan profil",
+    profileToastLoadFailed: "Tidak dapat memuat profil",
+    profileToastImageUploaded: "Gambar diunggah",
+    profileOwnerNameTooShort: "Nama tampilan minimal 2 karakter.",
     profileUploadTooLarge: (maxKb) =>
-      `Berkas terlalu besar (maks ~${maxKb} KB). Pakai gambar lebih kecil atau tempel URL.`,
+      `Berkas terlalu besar (maks ~${maxKb} KB). Pilih gambar lebih kecil.`,
     linksPageTitle: "Kelola tautan",
     linksPageDescription:
       "Buat path pendek di subdomain Anda, arahkan ke tujuan, dan atur visibilitas di halaman toko publik.",

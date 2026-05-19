@@ -5,45 +5,47 @@ interface ProfileHeaderProps {
   name: string;
   bio: string;
   avatar: string;
+  banner?: string;
   tags?: string[];
 }
 
-export function ProfileHeader({ name, bio, avatar, tags }: ProfileHeaderProps) {
+export function ProfileHeader({
+  name,
+  bio,
+  avatar,
+  banner,
+  tags,
+}: ProfileHeaderProps) {
+  const bannerSrc =
+    banner?.trim() ||
+    "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=1200&h=400&fit=crop";
+
   return (
     <div className="relative overflow-hidden rounded-3xl">
-      {/* Custom Banner Background */}
       <div className="absolute inset-0">
-        <img
-          src="https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=1200&h=400&fit=crop"
-          alt="Banner"
-          className="w-full h-full object-cover"
-        />
+        <img src={bannerSrc} alt="" className="h-full w-full object-cover" />
         <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-black/50 to-black/60" />
       </div>
 
-      <div className="relative text-center py-8 px-4">
-        {/* Avatar with ring */}
-        <div className="inline-block relative mb-4">
-          <div className="absolute inset-0 bg-gradient-to-r from-primary to-purple-500 rounded-full blur-md opacity-50 animate-pulse" />
-          <Avatar className="w-24 h-24 relative border-4 border-background shadow-xl">
+      <div className="relative px-4 py-8 text-center">
+        <div className="relative mb-4 inline-block">
+          <div className="absolute inset-0 animate-pulse rounded-full bg-gradient-to-r from-primary to-purple-500 opacity-50 blur-md" />
+          <Avatar className="relative h-24 w-24 border-4 border-background shadow-xl">
             <AvatarImage src={avatar} alt={name} />
             <AvatarFallback>{name.charAt(0)}</AvatarFallback>
           </Avatar>
         </div>
 
-        {/* Name */}
-        <h1 className="text-3xl font-bold mb-2 text-white drop-shadow-lg">
+        <h1 className="mb-2 text-3xl font-bold text-white drop-shadow-lg">
           {name}
         </h1>
 
-        {/* Bio */}
-        <p className="text-white/90 max-w-md mx-auto mb-4 leading-relaxed drop-shadow">
+        <p className="mx-auto mb-4 max-w-md leading-relaxed text-white/90 drop-shadow">
           {bio}
         </p>
 
-        {/* Tags */}
         {tags && tags.length > 0 && (
-          <div className="flex flex-wrap gap-2 justify-center">
+          <div className="flex flex-wrap justify-center gap-2">
             {tags.map((tag, index) => (
               <Badge key={index} variant="secondary" className="px-3 py-1">
                 {tag}
