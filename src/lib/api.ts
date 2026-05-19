@@ -7,13 +7,16 @@ import type {
   Link,
   LoginResponse,
   PatchLinkPayload,
-  PatchStorePayload,
+  PatchStoreMePayload,
+  PatchUserMePayload,
+  PublicStoreCard,
   RegisterResponse,
-  StoreBrandingApi,
+  StoreMe,
   SubdomainAvailabilityResponse,
+  UserMe,
 } from "./types";
 
-const API_BASE = import.meta.env.VITE_API_URL ?? "http://localhost:3000";
+export const API_BASE = import.meta.env.VITE_API_URL ?? "http://localhost:3000";
 
 const TENANT_HEADER = "x-tenant-subdomain";
 
@@ -47,7 +50,9 @@ export async function api<T>(
   opts: RequestInit & { tenant?: string; token?: string } = {},
 ): Promise<T> {
   const headers = new Headers(opts.headers);
-  if (!headers.has("Content-Type") && opts.body) {
+  const isFormData =
+    typeof FormData !== "undefined" && opts.body instanceof FormData;
+  if (!isFormData && !headers.has("Content-Type") && opts.body) {
     headers.set("Content-Type", "application/json");
   }
   if (opts.tenant) {
@@ -290,55 +295,91 @@ export function patchLink(
   });
 }
 
-/**
- * Loads store branding when the API exposes `GET /stores/:storeId`.
- * Returns null if the endpoint is absent (404/405).
- */
-export async function fetchStoreBrandingMaybe(
-  tenant: string,
-  storeId: string,
-  token: string,
-): Promise<StoreBrandingApi | null> {
-  try {
-    return await api<StoreBrandingApi>(`/stores/${storeId}`, {
-      tenant,
-      token,
-    });
-  } catch (e) {
-    if (
-      e instanceof ApiError &&
-      (e.status === 404 || e.status === 405 || e.status === 501)
-    ) {
-      return null;
-    }
-    throw e;
+/** Absolute URL for API-hosted media paths. */
+export function resolveApiMediaUrl(url: string | null | undefined): string | null {
+  if (!url?.trim()) return null;
+  const u = url.trim();
+  if (
+    u.startsWith("http://") ||
+    u.startsWith("https://") ||
+    u.startsWith("data:")
+  ) {
+    return u;
   }
+  const base = API_BASE.replace(/\/$/, "");
+  return u.startsWith("/") ? `${base}${u}` : `${base}/${u}`;
 }
 
-/**
- * Persists branding when backend supports `PATCH /stores/:storeId`.
- * Returns updated store or null when the route is unavailable.
- */
-export async function patchStoreBrandingMaybe(
+export function fetchUserMe(tenant: string, token: string): Promise<UserMe> {
+  return api<UserMe>("/users/me", { tenant, token });
+}
+
+export function patchUserMe(
   tenant: string,
-  storeId: string,
   token: string,
-  body: PatchStorePayload,
-): Promise<StoreBrandingApi | null> {
-  try {
-    return await api<StoreBrandingApi>(`/stores/${storeId}`, {
-      method: "PATCH",
-      tenant,
-      token,
-      body: JSON.stringify(body),
-    });
-  } catch (e) {
-    if (
-      e instanceof ApiError &&
-      (e.status === 404 || e.status === 405 || e.status === 501)
-    ) {
-      return null;
-    }
-    throw e;
-  }
+  body: PatchUserMePayload,
+): Promise<UserMe> {
+  const payload: PatchUserMePayload = {};
+  if (body.name !== undefined) payload.name = body.name.trim();
+  return api<UserMe>("/users/me", {
+    method: "PATCH",
+    tenant,
+    token,
+    body: JSON.stringify(payload),
+  });
+}
+
+export function uploadUserProfileImage(
+  tenant: string,
+  token: string,
+  file: File,
+): Promise<UserMe> {
+  const formData = new FormData();
+  formData.append("file", file);
+  return api<UserMe>("/users/me/profile-image", {
+    method: "POST",
+    tenant,
+    token,
+    body: formData,
+  });
+}
+
+export function fetchStoreMe(tenant: string, token: string): Promise<StoreMe> {
+  return api<StoreMe>("/stores/me", { tenant, token });
+}
+
+export function patchStoreMe(
+  tenant: string,
+  token: string,
+  body: PatchStoreMePayload,
+): Promise<StoreMe> {
+  const payload: PatchStoreMePayload = {};
+  if (body.title !== undefined) payload.title = body.title;
+  if (body.description !== undefined) payload.description = body.description;
+  return api<StoreMe>("/stores/me", {
+    method: "PATCH",
+    tenant,
+    token,
+    body: JSON.stringify(payload),
+  });
+}
+
+export function uploadStoreBackgroundImage(
+  tenant: string,
+  token: string,
+  file: File,
+): Promise<StoreMe> {
+  const formData = new FormData();
+  formData.append("file", file);
+  return api<StoreMe>("/stores/me/background-image", {
+    method: "POST",
+    tenant,
+    token,
+    body: formData,
+  });
+}
+
+/** Public storefront card; no JWT. */
+export function fetchPublicStore(tenant: string): Promise<PublicStoreCard> {
+  return api<PublicStoreCard>("/stores/public", { tenant });
 }

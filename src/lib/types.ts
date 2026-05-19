@@ -71,19 +71,42 @@ export type CreateLinkPayload = {
 /** `PATCH /links/:id`; `accessLink` cannot change on server. */
 export type PatchLinkPayload = Partial<Omit<CreateLinkPayload, "accessLink">>;
 
-/** When `GET/PATCH /stores/:id` exists — branding fields. */
-export type StoreBrandingApi = {
+/** `GET /users/me` */
+export type UserMe = {
   id: string;
-  subdomain?: string;
-  title?: string | null;
-  description?: string | null;
-  profilePicture?: string | null;
-  banner?: string | null;
+  name: string;
+  email: string;
+  profileImageUrl: string | null;
 };
 
-export type PatchStorePayload = Partial<
-  Pick<StoreBrandingApi, "title" | "description" | "profilePicture" | "banner">
->;
+/** `PATCH /users/me` */
+export type PatchUserMePayload = {
+  name?: string;
+};
+
+/** `GET /stores/me` */
+export type StoreMe = {
+  id: string;
+  subdomain: string;
+  title: string | null;
+  description: string | null;
+  backgroundImageUrl: string | null;
+};
+
+/** `PATCH /stores/me` */
+export type PatchStoreMePayload = {
+  title?: string;
+  description?: string;
+};
+
+/** `GET /stores/public` (tenant header, no JWT) */
+export type PublicStoreCard = {
+  title: string | null;
+  description: string | null;
+  profileImageUrl: string | null;
+  backgroundImageUrl: string | null;
+  subdomain?: string;
+};
 
 /** `GET /stores/subdomain/:subdomain/availability` */
 export type SubdomainAvailabilityResponse = {
