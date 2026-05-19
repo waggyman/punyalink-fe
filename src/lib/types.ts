@@ -95,8 +95,8 @@ export type StoreMe = {
 
 /** `PATCH /stores/me` */
 export type PatchStoreMePayload = {
-  title?: string;
-  description?: string;
+  title?: string | null;
+  description?: string | null;
 };
 
 /** `GET /stores/public` (tenant header, no JWT) */

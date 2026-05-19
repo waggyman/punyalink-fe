@@ -6,10 +6,14 @@ import { Pagination } from "../components/Pagination";
 import { Badge } from "../components/ui/badge";
 import { Separator } from "../components/ui/separator";
 import { OwnerToolbar } from "../components/OwnerToolbar";
-import { readStoreBranding } from "@/lib/store-branding-local";
-import { ApiError, fetchLinks } from "@/lib/api";
+import {
+  ApiError,
+  fetchLinks,
+  fetchPublicStore,
+  resolveApiMediaUrl,
+} from "@/lib/api";
 import { useAuth } from "@/lib/auth";
-import type { Link } from "@/lib/types";
+import type { Link, PublicStoreCard } from "@/lib/types";
 import { getBaseDomain } from "@/lib/tenant";
 
 const DEFAULT_AVATAR =
@@ -24,9 +28,11 @@ type PublicStorePageProps = {
 
 export function PublicStorePage({ tenant }: PublicStorePageProps) {
   const { token, isAuthenticated } = useAuth();
+  const baseDomain = getBaseDomain();
   const [searchQuery, setSearchQuery] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [links, setLinks] = useState<Link[]>([]);
+  const [storeCard, setStoreCard] = useState<PublicStoreCard | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -35,14 +41,19 @@ export function PublicStorePage({ tenant }: PublicStorePageProps) {
     setLoading(true);
     setError(null);
 
-    fetchLinks(tenant, token ?? undefined)
-      .then((data) => {
-        if (!cancelled) setLinks(data);
+    Promise.all([
+      fetchLinks(tenant, token ?? undefined),
+      fetchPublicStore(tenant).catch(() => null),
+    ])
+      .then(([linkData, publicStore]) => {
+        if (cancelled) return;
+        setLinks(linkData);
+        setStoreCard(publicStore);
       })
       .catch((err) => {
         if (!cancelled) {
           setError(
-            err instanceof ApiError ? err.message : "Failed to load links",
+            err instanceof ApiError ? err.message : "Failed to load store",
           );
         }
       })
@@ -83,37 +94,33 @@ export function PublicStorePage({ tenant }: PublicStorePageProps) {
     setCurrentPage(1);
   };
 
-  const branding = useMemo(() => readStoreBranding(tenant), [tenant]);
-  const baseDomain = getBaseDomain();
-
   const storeTitle =
-    branding.title.trim() ||
+    storeCard?.title?.trim() ||
     tenant.charAt(0).toUpperCase() + tenant.slice(1);
 
   const bio =
-    branding.description.trim() ||
+    storeCard?.description?.trim() ||
     `Links from ${tenant}.${baseDomain}`;
 
-  const avatarSrc = branding.profilePicture?.trim() || DEFAULT_AVATAR;
-  const bannerSrc = branding.banner?.trim() || DEFAULT_BANNER_BG;
+  const avatarSrc =
+    resolveApiMediaUrl(storeCard?.profileImageUrl) || DEFAULT_AVATAR;
+  const bannerSrc =
+    resolveApiMediaUrl(storeCard?.backgroundImageUrl) || DEFAULT_BANNER_BG;
 
   return (
-    <div className="min-h-screen relative">
+    <div className="relative min-h-screen">
       <div className="fixed inset-0 -z-10">
-        <img
-          src={bannerSrc}
-          alt=""
-          className="w-full h-full object-cover"
-        />
+        <img src={bannerSrc} alt="" className="h-full w-full object-cover" />
         <div className="absolute inset-0 bg-background/90 backdrop-blur-sm" />
       </div>
 
-      <div className="max-w-2xl mx-auto px-4 py-8 sm:py-12 relative">
+      <div className="relative mx-auto max-w-2xl px-4 py-8 sm:py-12">
         <OwnerToolbar />
         <ProfileHeader
           name={storeTitle}
           bio={bio}
           avatar={avatarSrc}
+          banner={bannerSrc}
           tags={isAuthenticated ? ["Owner preview"] : undefined}
         />
         <Separator className="my-10" />
@@ -121,7 +128,7 @@ export function PublicStorePage({ tenant }: PublicStorePageProps) {
           <SearchInput value={searchQuery} onChange={handleSearchChange} />
         </div>
         <div className="space-y-6">
-          <div className="flex items-center justify-between mb-6">
+          <div className="mb-6 flex items-center justify-between">
             <h2 className="text-xl font-semibold">Featured Links</h2>
             <span className="text-sm text-muted-foreground">
               {filteredLinks.length}{" "}
@@ -129,10 +136,12 @@ export function PublicStorePage({ tenant }: PublicStorePageProps) {
             </span>
           </div>
           {loading && (
-            <p className="text-center text-muted-foreground py-12">Loading links…</p>
+            <p className="py-12 text-center text-muted-foreground">
+              Loading…
+            </p>
           )}
           {error && !loading && (
-            <p className="text-center text-destructive py-12">{error}</p>
+            <p className="py-12 text-center text-destructive">{error}</p>
           )}
           {!loading && !error && currentLinks.length > 0 && (
             <>
@@ -163,7 +172,7 @@ export function PublicStorePage({ tenant }: PublicStorePageProps) {
             </>
           )}
           {!loading && !error && currentLinks.length === 0 && (
-            <p className="text-center text-muted-foreground py-12">
+            <p className="py-12 text-center text-muted-foreground">
               {searchQuery
                 ? `No links found matching "${searchQuery}"`
                 : "No links to show yet."}
@@ -171,7 +180,9 @@ export function PublicStorePage({ tenant }: PublicStorePageProps) {
           )}
         </div>
         <footer className="mt-16 text-center text-sm text-muted-foreground">
-          <p>© {new Date().getFullYear()} {storeTitle}</p>
+          <p>
+            © {new Date().getFullYear()} {storeTitle}
+          </p>
         </footer>
       </div>
     </div>
