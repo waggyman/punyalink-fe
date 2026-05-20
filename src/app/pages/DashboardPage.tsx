@@ -506,7 +506,7 @@ export function DashboardPage({ tenant }: DashboardPageProps) {
                         >
                           <div className="flex min-w-0 flex-1 gap-3 sm:gap-4">
                             <LinkRowThumb
-                              src={link.image}
+                              src={link.imageUrl}
                               alt=""
                               rank={index + 1}
                             />

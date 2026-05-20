@@ -165,7 +165,7 @@ export function CollectionPage({ tenant }: CollectionPageProps) {
                     <LinkCard
                       key={link.id}
                       title={link.name}
-                      image={link.image}
+                      image={link.imageUrl}
                       url={`/${link.accessLink}`}
                     />
                   ))}
