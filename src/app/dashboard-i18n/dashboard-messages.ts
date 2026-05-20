@@ -120,7 +120,23 @@ export type DashboardStrings = {
   formSlugOptional: string;
   formSlugHint: string;
   formImageUrlLabel: string;
+  formImageUploadLabel: string;
+  formImageUploadHint: string;
   formThumbnailPreviewLabel: string;
+  linkPickImage: string;
+  linkReplaceImage: string;
+  linkClearNewImage: string;
+  linkCropTitle: string;
+  linkCropDescription: string;
+  linkCropHint: string;
+  linkCropApply: string;
+  linkCropApplying: string;
+  linkCropZoomAria: string;
+  linkCropFrameAria: string;
+  linkImageInvalidType: string;
+  linkImageTooLarge: (maxMb: number) => string;
+  linkImageTooSmall: (minPx: number) => string;
+  linkImageCropFailed: string;
   formVisibleLabel: string;
   formActiveLabel: string;
   linksEmptyPrompt: string;
@@ -271,7 +287,26 @@ export const dashboardLocales: Record<DashboardLocale, DashboardStrings> = {
     formSlugOptional: "Slug (optional)",
     formSlugHint: "Lowercase letters, numbers, and hyphens — leave blank to auto-generate.",
     formImageUrlLabel: "Thumbnail URL (optional)",
+    formImageUploadLabel: "Card thumbnail",
+    formImageUploadHint:
+      "16:9 landscape, max 2 MB. Drag to reposition and use the slider to zoom before saving.",
     formThumbnailPreviewLabel: "Thumbnail preview",
+    linkPickImage: "Upload image",
+    linkReplaceImage: "Replace image",
+    linkClearNewImage: "Discard new image",
+    linkCropTitle: "Crop thumbnail",
+    linkCropDescription:
+      "Frame your image for the link card. The visible area is saved as a 16:9 JPEG.",
+    linkCropHint: "Drag the image to reposition · use the slider to zoom",
+    linkCropApply: "Use this crop",
+    linkCropApplying: "Processing…",
+    linkCropZoomAria: "Zoom",
+    linkCropFrameAria: "Crop preview frame",
+    linkImageInvalidType: "Please choose a JPEG, PNG, or WebP image.",
+    linkImageTooLarge: (maxMb) => `Image must be ${maxMb} MB or smaller.`,
+    linkImageTooSmall: (minPx) =>
+      `Image is too small — shortest side should be at least ${minPx}px.`,
+    linkImageCropFailed: "Could not prepare the image. Try another file.",
     formVisibleLabel: "Show on public storefront",
     formActiveLabel: "Active",
     linksEmptyPrompt: "No links yet. Add one to get started.",
@@ -430,7 +465,26 @@ export const dashboardLocales: Record<DashboardLocale, DashboardStrings> = {
     formSlugHint:
       "Huruf kecil, angka, dan tanda hubung — kosongkan untuk pembuatan otomatis.",
     formImageUrlLabel: "URL gambar thumbnail (opsional)",
+    formImageUploadLabel: "Gambar kartu",
+    formImageUploadHint:
+      "Landscape 16:9, maks 2 MB. Seret untuk posisi dan geser slider untuk zoom sebelum simpan.",
     formThumbnailPreviewLabel: "Pratinjau thumbnail",
+    linkPickImage: "Unggah gambar",
+    linkReplaceImage: "Ganti gambar",
+    linkClearNewImage: "Buang gambar baru",
+    linkCropTitle: "Potong thumbnail",
+    linkCropDescription:
+      "Sesuaikan bingkai untuk kartu tautan. Area terlihat disimpan sebagai JPEG 16:9.",
+    linkCropHint: "Seret gambar untuk posisi · gunakan slider untuk zoom",
+    linkCropApply: "Pakai potongan ini",
+    linkCropApplying: "Memproses…",
+    linkCropZoomAria: "Zoom",
+    linkCropFrameAria: "Bingkai pratinjau potong",
+    linkImageInvalidType: "Pilih gambar JPEG, PNG, atau WebP.",
+    linkImageTooLarge: (maxMb) => `Gambar maksimal ${maxMb} MB.`,
+    linkImageTooSmall: (minPx) =>
+      `Gambar terlalu kecil — sisi terpendek minimal ${minPx}px.`,
+    linkImageCropFailed: "Gagal menyiapkan gambar. Coba berkas lain.",
     formVisibleLabel: "Tampil di vitrin publik",
     formActiveLabel: "Aktif",
     linksEmptyPrompt: "Belum ada tautan. Tambahkan untuk memulai.",
