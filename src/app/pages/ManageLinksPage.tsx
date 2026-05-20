@@ -1,7 +1,8 @@
-import { useEffect, useId, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import { toast } from "sonner";
 
 import { useDashboardI18n } from "@/app/dashboard-i18n/use-dashboard-i18n";
+import { LinkThumbnailCropDialog } from "@/app/components/LinkThumbnailCropDialog";
 import {
   ApiError,
   createLink,
@@ -11,6 +12,11 @@ import {
 } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import { isReservedSlug, isValidAccessLinkSlug } from "@/lib/constants";
+import {
+  LINK_THUMB_MAX_BYTES,
+  validateLinkThumbnailDimensions,
+  validateLinkThumbnailFile,
+} from "@/lib/link-thumbnail-image";
 import type { Link as StoreLink } from "@/lib/types";
 import {
   AlertDialog,
@@ -44,7 +50,6 @@ type ManageLinksPageProps = {
 type LinkForm = {
   name: string;
   externalLink: string;
-  image: string;
   accessLink: string;
   isPublic: boolean;
   isActive: boolean;
@@ -53,7 +58,6 @@ type LinkForm = {
 const EMPTY_FORM: LinkForm = {
   name: "",
   externalLink: "",
-  image: "",
   accessLink: "",
   isPublic: true,
   isActive: true,
@@ -63,7 +67,6 @@ function linkToForm(link: StoreLink): LinkForm {
   return {
     name: link.name,
     externalLink: link.externalLink,
-    image: link.image ?? "",
     accessLink: link.accessLink,
     isPublic: link.isPublic,
     isActive: link.isActive,
@@ -73,10 +76,13 @@ function linkToForm(link: StoreLink): LinkForm {
 const PLACEHOLDER_THUMB =
   "https://images.unsplash.com/photo-1579546929518-9e396f3cc809?w=256&h=256&fit=crop";
 
+const MAX_MB = LINK_THUMB_MAX_BYTES / (1024 * 1024);
+
 export function ManageLinksPage({ tenant }: ManageLinksPageProps) {
   const { t } = useDashboardI18n();
   const { token } = useAuth();
   const idBase = useId();
+  const imageInputRef = useRef<HTMLInputElement>(null);
 
   const [links, setLinks] = useState<StoreLink[]>([]);
   const [loading, setLoading] = useState(true);
@@ -86,13 +92,36 @@ export function ManageLinksPage({ tenant }: ManageLinksPageProps) {
   const [editId, setEditId] = useState<string | null>(null);
   const [form, setForm] = useState<LinkForm>(EMPTY_FORM);
 
+  const [existingImageUrl, setExistingImageUrl] = useState("");
+  const [pendingImageFile, setPendingImageFile] = useState<File | null>(null);
+  const [previewObjectUrl, setPreviewObjectUrl] = useState<string | null>(null);
+  const [imagePreviewBroken, setImagePreviewBroken] = useState(false);
+
+  const [cropOpen, setCropOpen] = useState(false);
+  const [cropSourceFile, setCropSourceFile] = useState<File | null>(null);
+
   const [deleteTarget, setDeleteTarget] = useState<StoreLink | null>(null);
   const [saving, setSaving] = useState(false);
-  const [imagePreviewBroken, setImagePreviewBroken] = useState(false);
+
+  useEffect(() => {
+    return () => {
+      if (previewObjectUrl) URL.revokeObjectURL(previewObjectUrl);
+    };
+  }, [previewObjectUrl]);
 
   useEffect(() => {
     setImagePreviewBroken(false);
-  }, [form.image]);
+  }, [existingImageUrl, previewObjectUrl]);
+
+  function resetImageState() {
+    setExistingImageUrl("");
+    setPendingImageFile(null);
+    if (previewObjectUrl) URL.revokeObjectURL(previewObjectUrl);
+    setPreviewObjectUrl(null);
+    setCropSourceFile(null);
+    setCropOpen(false);
+    if (imageInputRef.current) imageInputRef.current.value = "";
+  }
 
   function reloadLinks() {
     if (!token) return;
@@ -117,13 +146,53 @@ export function ManageLinksPage({ tenant }: ManageLinksPageProps) {
   function openCreate() {
     setEditId(null);
     setForm(EMPTY_FORM);
+    resetImageState();
     setDialogOpen(true);
   }
 
   function openEdit(link: StoreLink) {
     setEditId(link.id);
     setForm(linkToForm(link));
+    resetImageState();
+    setExistingImageUrl(link.imageUrl?.trim() ?? "");
     setDialogOpen(true);
+  }
+
+  async function handleImagePick(file: File | null) {
+    if (!file) return;
+    const basic = validateLinkThumbnailFile(file);
+    if (basic === "type") {
+      toast.error(t.linkImageInvalidType);
+      return;
+    }
+    if (basic === "size") {
+      toast.error(t.linkImageTooLarge(MAX_MB));
+      return;
+    }
+    const dim = await validateLinkThumbnailDimensions(file);
+    if (dim === "dimensions") {
+      toast.error(t.linkImageTooSmall(640));
+      return;
+    }
+    if (dim === "type") {
+      toast.error(t.linkImageInvalidType);
+      return;
+    }
+    setCropSourceFile(file);
+    setCropOpen(true);
+  }
+
+  function handleCropConfirm(file: File) {
+    setPendingImageFile(file);
+    if (previewObjectUrl) URL.revokeObjectURL(previewObjectUrl);
+    setPreviewObjectUrl(URL.createObjectURL(file));
+  }
+
+  function clearPendingImage() {
+    setPendingImageFile(null);
+    if (previewObjectUrl) URL.revokeObjectURL(previewObjectUrl);
+    setPreviewObjectUrl(null);
+    if (imageInputRef.current) imageInputRef.current.value = "";
   }
 
   async function handleSubmitSave(e: React.FormEvent) {
@@ -143,33 +212,30 @@ export function ManageLinksPage({ tenant }: ManageLinksPageProps) {
       return;
     }
 
-    const imageTrim = form.image.trim();
-    const imagePayload =
-      imageTrim === "" ? null : imageTrim;
-
     setSaving(true);
     try {
       if (editId) {
         await patchLink(tenant, editId, token, {
           name,
           externalLink,
-          image: imagePayload,
           isPublic: form.isPublic,
           isActive: form.isActive,
+          ...(pendingImageFile ? { file: pendingImageFile } : {}),
         });
         toast.success(t.linkToastUpdated);
       } else {
         await createLink(tenant, token, {
           name,
           externalLink,
-          image: imagePayload,
           accessLink: slugInput || undefined,
           isPublic: form.isPublic,
           isActive: form.isActive,
+          ...(pendingImageFile ? { file: pendingImageFile } : {}),
         });
         toast.success(t.linkToastCreated);
       }
       setDialogOpen(false);
+      resetImageState();
       reloadLinks();
     } catch (err) {
       toast.error(t.linkToastSaveFailed, {
@@ -198,11 +264,14 @@ export function ManageLinksPage({ tenant }: ManageLinksPageProps) {
     }
   }
 
-  const trimmedImageUrl = form.image.trim();
   const imagePreviewSrc =
-    trimmedImageUrl && !imagePreviewBroken
-      ? trimmedImageUrl
-      : PLACEHOLDER_THUMB;
+    previewObjectUrl ??
+    (existingImageUrl.trim() && !imagePreviewBroken
+      ? existingImageUrl.trim()
+      : PLACEHOLDER_THUMB);
+
+  const hasExistingThumb = !!existingImageUrl.trim();
+  const hasPendingThumb = !!pendingImageFile;
 
   return (
     <main className="mx-auto w-full max-w-6xl min-w-0 px-3 py-6 sm:px-4 sm:py-10">
@@ -246,13 +315,13 @@ export function ManageLinksPage({ tenant }: ManageLinksPageProps) {
         <div className="grid gap-3 sm:grid-cols-1">
           {links.map((link) => {
             const thumb =
-              link.image && link.image.trim() !== ""
-                ? link.image
+              link.imageUrl && link.imageUrl.trim() !== ""
+                ? link.imageUrl
                 : PLACEHOLDER_THUMB;
             return (
               <Card
                 key={link.id}
-                className="border-border/70 shadow-sm overflow-hidden"
+                className="overflow-hidden border-border/70 shadow-sm"
               >
                 <CardContent className="flex flex-col gap-4 p-4 sm:flex-row sm:items-center">
                   <div className="flex min-w-0 flex-1 items-start gap-4">
@@ -316,14 +385,17 @@ export function ManageLinksPage({ tenant }: ManageLinksPageProps) {
 
       <Dialog
         open={dialogOpen}
-        onOpenChange={(o) => !saving && setDialogOpen(o)}
+        onOpenChange={(o) => {
+          if (!saving) {
+            setDialogOpen(o);
+            if (!o) resetImageState();
+          }
+        }}
       >
         <DialogContent className="max-h-[92vh] overflow-y-auto">
           <form onSubmit={handleSubmitSave}>
             <DialogHeader>
-              <DialogTitle>
-                {editId ? t.linkEdit : t.linkAdd}
-              </DialogTitle>
+              <DialogTitle>{editId ? t.linkEdit : t.linkAdd}</DialogTitle>
               <DialogDescription className="text-pretty">
                 {editId
                   ? `${t.linksTableSlug}: /${form.accessLink}`
@@ -387,21 +459,53 @@ export function ManageLinksPage({ tenant }: ManageLinksPageProps) {
               {editId && (
                 <div className="grid gap-2">
                   <Label>{t.linksTableSlug}</Label>
-                  <Input disabled value={`/${form.accessLink}`} className="font-mono opacity-70" />
+                  <Input
+                    disabled
+                    value={`/${form.accessLink}`}
+                    className="font-mono opacity-70"
+                  />
                 </div>
               )}
 
               <div className="grid gap-2">
-                <Label htmlFor={`${idBase}-img`}>{t.formImageUrlLabel}</Label>
-                <Input
-                  id={`${idBase}-img`}
-                  type="url"
-                  placeholder="https://"
-                  value={form.image}
-                  onChange={(e) =>
-                    setForm((s) => ({ ...s, image: e.target.value }))
-                  }
-                />
+                <Label>{t.formImageUploadLabel}</Label>
+                <p className="text-xs text-muted-foreground">
+                  {t.formImageUploadHint}
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => imageInputRef.current?.click()}
+                  >
+                    {hasExistingThumb || hasPendingThumb
+                      ? t.linkReplaceImage
+                      : t.linkPickImage}
+                  </Button>
+                  {hasPendingThumb && (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      className="text-muted-foreground"
+                      onClick={clearPendingImage}
+                    >
+                      {t.linkClearNewImage}
+                    </Button>
+                  )}
+                  <input
+                    ref={imageInputRef}
+                    type="file"
+                    accept="image/jpeg,image/png,image/webp,image/gif"
+                    className="sr-only"
+                    tabIndex={-1}
+                    aria-hidden
+                    onChange={(ev) =>
+                      handleImagePick(ev.target.files?.[0] ?? null)
+                    }
+                  />
+                </div>
                 <p className="text-xs font-medium text-muted-foreground">
                   {t.formThumbnailPreviewLabel}
                 </p>
@@ -419,11 +523,9 @@ export function ManageLinksPage({ tenant }: ManageLinksPageProps) {
               </div>
 
               <div className="flex items-center justify-between gap-4 rounded-lg border px-4 py-3">
-                <div className="space-y-1">
-                  <Label htmlFor={`${idBase}-pub`} className="block">
-                    {t.formVisibleLabel}
-                  </Label>
-                </div>
+                <Label htmlFor={`${idBase}-pub`} className="block">
+                  {t.formVisibleLabel}
+                </Label>
                 <Switch
                   id={`${idBase}-pub`}
                   checked={form.isPublic}
@@ -434,11 +536,9 @@ export function ManageLinksPage({ tenant }: ManageLinksPageProps) {
               </div>
 
               <div className="flex items-center justify-between gap-4 rounded-lg border px-4 py-3">
-                <div className="space-y-1">
-                  <Label htmlFor={`${idBase}-active`} className="block">
-                    {t.formActiveLabel}
-                  </Label>
-                </div>
+                <Label htmlFor={`${idBase}-active`} className="block">
+                  {t.formActiveLabel}
+                </Label>
                 <Switch
                   id={`${idBase}-active`}
                   checked={form.isActive}
@@ -463,6 +563,13 @@ export function ManageLinksPage({ tenant }: ManageLinksPageProps) {
         </DialogContent>
       </Dialog>
 
+      <LinkThumbnailCropDialog
+        open={cropOpen}
+        file={cropSourceFile}
+        onOpenChange={setCropOpen}
+        onConfirm={handleCropConfirm}
+      />
+
       <AlertDialog
         open={deleteTarget !== null}
         onOpenChange={(o) => !o && !saving && setDeleteTarget(null)}
@@ -475,7 +582,9 @@ export function ManageLinksPage({ tenant }: ManageLinksPageProps) {
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={saving}>{t.dialogCancel}</AlertDialogCancel>
+            <AlertDialogCancel disabled={saving}>
+              {t.dialogCancel}
+            </AlertDialogCancel>
             <Button
               variant="destructive"
               type="button"

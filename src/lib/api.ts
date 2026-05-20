@@ -45,6 +45,27 @@ function formatErrorMessage(body: unknown, status: number): string {
   return `Request failed (${status})`;
 }
 
+/** Coerce link JSON from API (`imageUrl`; legacy `image` fallback). */
+function normalizeLink(raw: Record<string, unknown>): Link {
+  const imageUrl =
+    typeof raw.imageUrl === "string"
+      ? raw.imageUrl
+      : typeof raw.image === "string"
+        ? raw.image
+        : null;
+  return { ...raw, imageUrl } as Link;
+}
+
+function normalizeCollectionDetail(raw: CollectionDetail): CollectionDetail {
+  if (!Array.isArray(raw.links)) return raw;
+  return {
+    ...raw,
+    links: raw.links.map((link) =>
+      normalizeLink(link as unknown as Record<string, unknown>),
+    ),
+  };
+}
+
 export async function api<T>(
   path: string,
   opts: RequestInit & { tenant?: string; token?: string } = {},
@@ -143,7 +164,12 @@ export function fetchLinks(
   tenant: string,
   token?: string,
 ): Promise<Link[]> {
-  return api<Link[]>("/links", { tenant, token });
+  return api<Link[] | Record<string, unknown>[]>("/links", {
+    tenant,
+    token,
+  }).then((rows) =>
+    Array.isArray(rows) ? rows.map((row) => normalizeLink(row)) : [],
+  );
 }
 
 export function visitLink(
@@ -165,7 +191,7 @@ export function fetchCollectionBySlug(
   return api<CollectionDetail>(
     `/link-collections/access/${encodeURIComponent(accessLink)}`,
     { tenant, token },
-  );
+  ).then(normalizeCollectionDetail);
 }
 
 export function fetchLinkCollections(
@@ -191,7 +217,7 @@ export function createLinkCollection(
     tenant,
     token,
     body: JSON.stringify(payload),
-  });
+  }).then(normalizeCollectionDetail);
 }
 
 export function fetchLinkCollectionById(
@@ -202,7 +228,7 @@ export function fetchLinkCollectionById(
   return api<CollectionDetail>(`/link-collections/${id}`, {
     tenant,
     token,
-  });
+  }).then(normalizeCollectionDetail);
 }
 
 export function patchLinkCollection(
@@ -231,7 +257,7 @@ export function patchLinkCollection(
     tenant,
     token,
     body: JSON.stringify(payload),
-  });
+  }).then(normalizeCollectionDetail);
 }
 
 export function deleteLinkCollection(
@@ -263,22 +289,40 @@ export function createLink(
   token: string,
   body: CreateLinkPayload,
 ): Promise<Link> {
+  if (body.file) {
+    const fd = new FormData();
+    fd.append("name", body.name);
+    fd.append("externalLink", body.externalLink);
+    fd.append("isPublic", String(body.isPublic ?? true));
+    fd.append("isActive", String(body.isActive ?? true));
+    const slug = body.accessLink?.trim();
+    if (slug) fd.append("accessLink", slug);
+    if (body.source?.trim()) fd.append("source", body.source.trim());
+    fd.append("file", body.file);
+    return api<Record<string, unknown>>("/links", {
+      method: "POST",
+      tenant,
+      token,
+      body: fd,
+    }).then(normalizeLink);
+  }
+
   const payload: Record<string, unknown> = {
     name: body.name,
     externalLink: body.externalLink,
-    image: body.image ?? null,
     source: body.source ?? null,
     isPublic: body.isPublic ?? true,
     isActive: body.isActive ?? true,
   };
   const slug = body.accessLink?.trim();
   if (slug) payload.accessLink = slug;
-  return api<Link>("/links", {
+  if (body.imageUrl !== undefined) payload.imageUrl = body.imageUrl;
+  return api<Record<string, unknown>>("/links", {
     method: "POST",
     tenant,
     token,
     body: JSON.stringify(payload),
-  });
+  }).then(normalizeLink);
 }
 
 export function patchLink(
@@ -287,12 +331,38 @@ export function patchLink(
   token: string,
   body: PatchLinkPayload,
 ): Promise<Link> {
-  return api<Link>(`/links/${id}`, {
+  if (body.file) {
+    const fd = new FormData();
+    if (body.name !== undefined) fd.append("name", body.name);
+    if (body.externalLink !== undefined) {
+      fd.append("externalLink", body.externalLink);
+    }
+    if (body.isPublic !== undefined) {
+      fd.append("isPublic", String(body.isPublic));
+    }
+    if (body.isActive !== undefined) {
+      fd.append("isActive", String(body.isActive));
+    }
+    if (body.source !== undefined && body.source !== null) {
+      fd.append("source", body.source);
+    }
+    fd.append("file", body.file);
+    return api<Record<string, unknown>>(`/links/${id}`, {
+      method: "PATCH",
+      tenant,
+      token,
+      body: fd,
+    }).then(normalizeLink);
+  }
+
+  const { file: _file, ...jsonBody } = body;
+  void _file;
+  return api<Record<string, unknown>>(`/links/${id}`, {
     method: "PATCH",
     tenant,
     token,
-    body: JSON.stringify(body),
-  });
+    body: JSON.stringify(jsonBody),
+  }).then(normalizeLink);
 }
 
 /** Absolute URL for API-hosted media paths. */

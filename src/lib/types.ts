@@ -1,6 +1,6 @@
 export type Link = {
   id: string;
-  image: string | null;
+  imageUrl: string | null;
   name: string;
   externalLink: string;
   accessLink: string;
@@ -57,11 +57,13 @@ export type PatchLinkCollectionPayload = {
 
 export type AuthSession = LoginResponse;
 
-/** Body for `POST /links`. */
+/** Body for `POST /links` and multipart `file` uploads. */
 export type CreateLinkPayload = {
   name: string;
   externalLink: string;
-  image?: string | null;
+  imageUrl?: string | null;
+  /** Multipart field `file` — preferred over `imageUrl` when set. */
+  file?: File | null;
   accessLink?: string | null;
   source?: string | null;
   isPublic?: boolean;
@@ -99,13 +101,20 @@ export type PatchStoreMePayload = {
   description?: string | null;
 };
 
+/** Owner snippet on `GET /stores/public`. */
+export type PublicStoreOwner = {
+  name: string;
+  profileImageUrl: string | null;
+};
+
 /** `GET /stores/public` (tenant header, no JWT) */
 export type PublicStoreCard = {
+  id?: string;
+  subdomain?: string;
   title: string | null;
   description: string | null;
-  profileImageUrl: string | null;
   backgroundImageUrl: string | null;
-  subdomain?: string;
+  owner?: PublicStoreOwner | null;
 };
 
 /** `GET /stores/subdomain/:subdomain/availability` */
