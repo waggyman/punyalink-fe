@@ -98,9 +98,10 @@ function CollectionLinkPickCard({
   const [thumbBroken, setThumbBroken] = useState(false);
   useEffect(() => {
     setThumbBroken(false);
-  }, [link.id, link.image]);
+  }, [link.id, link.imageUrl]);
 
-  const trimmedImg = typeof link.image === "string" ? link.image.trim() : "";
+  const trimmedImg =
+    typeof link.imageUrl === "string" ? link.imageUrl.trim() : "";
   const thumbSrc =
     trimmedImg && !thumbBroken ? trimmedImg : LINK_PICK_FALLBACK_IMG;
 
