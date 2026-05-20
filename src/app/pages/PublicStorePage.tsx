@@ -103,7 +103,7 @@ export function PublicStorePage({ tenant }: PublicStorePageProps) {
     `Links from ${tenant}.${baseDomain}`;
 
   const avatarSrc =
-    resolveApiMediaUrl(storeCard?.profileImageUrl) || DEFAULT_AVATAR;
+    resolveApiMediaUrl(storeCard?.owner?.profileImageUrl) || DEFAULT_AVATAR;
   const bannerSrc =
     resolveApiMediaUrl(storeCard?.backgroundImageUrl) || DEFAULT_BANNER_BG;
 
@@ -159,7 +159,7 @@ export function PublicStorePage({ tenant }: PublicStorePageProps) {
                   )}
                   <LinkCard
                     title={link.name}
-                    image={link.image}
+                    image={resolveApiMediaUrl(link.imageUrl)}
                     url={`/${link.accessLink}`}
                   />
                 </div>
