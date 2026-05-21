@@ -80,7 +80,3 @@ After signup, the app redirects to **`{subdomain}.localhost`** (dev) or **`{subd
 - [React Router 7](https://reactrouter.com/)
 - [Tailwind CSS 4](https://tailwindcss.com/)
 - UI primitives from Radix / shadcn-style components in `src/app/components/ui/`
-
-## License
-
-See `ATTRIBUTIONS.md` where applicable.
