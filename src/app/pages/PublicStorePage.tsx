@@ -6,6 +6,7 @@ import { Pagination } from "../components/Pagination";
 import { Badge } from "../components/ui/badge";
 import { Separator } from "../components/ui/separator";
 import { OwnerToolbar } from "../components/OwnerToolbar";
+import { StorefrontThemeProvider } from "../storefront/StorefrontThemeContext";
 import {
   ApiError,
   fetchLinks,
@@ -108,24 +109,87 @@ export function PublicStorePage({ tenant }: PublicStorePageProps) {
     resolveApiMediaUrl(storeCard?.backgroundImageUrl) || DEFAULT_BANNER_BG;
 
   return (
+    <StorefrontThemeProvider tenant={tenant}>
+      <PublicStoreContent
+        tenant={tenant}
+        storeTitle={storeTitle}
+        bio={bio}
+        avatarSrc={avatarSrc}
+        bannerSrc={bannerSrc}
+        storeCard={storeCard}
+        isAuthenticated={isAuthenticated}
+        loading={loading}
+        error={error}
+        searchQuery={searchQuery}
+        onSearchChange={handleSearchChange}
+        filteredLinks={filteredLinks}
+        currentLinks={currentLinks}
+        currentPage={currentPage}
+        totalPages={totalPages}
+        onPageChange={setCurrentPage}
+      />
+    </StorefrontThemeProvider>
+  );
+}
+
+function PublicStoreContent({
+  tenant,
+  storeTitle,
+  bio,
+  avatarSrc,
+  bannerSrc,
+  storeCard,
+  isAuthenticated,
+  loading,
+  error,
+  searchQuery,
+  onSearchChange,
+  filteredLinks,
+  currentLinks,
+  currentPage,
+  totalPages,
+  onPageChange,
+}: {
+  tenant: string;
+  storeTitle: string;
+  bio: string;
+  avatarSrc: string;
+  bannerSrc: string;
+  storeCard: PublicStoreCard | null;
+  isAuthenticated: boolean;
+  loading: boolean;
+  error: string | null;
+  searchQuery: string;
+  onSearchChange: (value: string) => void;
+  filteredLinks: Link[];
+  currentLinks: Link[];
+  currentPage: number;
+  totalPages: number;
+  onPageChange: (page: number) => void;
+}) {
+  return (
     <div className="relative min-h-screen">
       <div className="fixed inset-0 -z-10">
         <img src={bannerSrc} alt="" className="h-full w-full object-cover" />
-        <div className="absolute inset-0 bg-background/90 backdrop-blur-sm" />
+        <div
+          className="absolute inset-0 backdrop-blur-sm"
+          style={{ background: "var(--store-page-overlay)" }}
+        />
       </div>
 
       <div className="relative mx-auto max-w-2xl px-4 py-8 sm:py-12">
-        <OwnerToolbar />
+        <OwnerToolbar tenant={tenant} />
         <ProfileHeader
           name={storeTitle}
           bio={bio}
           avatar={avatarSrc}
           banner={bannerSrc}
+          socialLinks={storeCard?.owner?.socialLinks}
           tags={isAuthenticated ? ["Owner preview"] : undefined}
         />
         <Separator className="my-10" />
         <div className="mb-8">
-          <SearchInput value={searchQuery} onChange={handleSearchChange} />
+          <SearchInput value={searchQuery} onChange={onSearchChange} />
         </div>
         <div className="space-y-6">
           <div className="mb-6 flex items-center justify-between">
@@ -167,7 +231,7 @@ export function PublicStorePage({ tenant }: PublicStorePageProps) {
               <Pagination
                 currentPage={currentPage}
                 totalPages={totalPages}
-                onPageChange={setCurrentPage}
+                onPageChange={onPageChange}
               />
             </>
           )}

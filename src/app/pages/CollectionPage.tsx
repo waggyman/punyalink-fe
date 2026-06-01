@@ -9,6 +9,7 @@ import { Button } from "../components/ui/button";
 import { Card, CardContent } from "../components/ui/card";
 import { Separator } from "../components/ui/separator";
 import { LinkCard } from "../components/LinkCard";
+import { StorefrontThemeProvider } from "../storefront/StorefrontThemeContext";
 
 type CollectionPageProps = {
   tenant: string;
@@ -84,7 +85,8 @@ export function CollectionPage({ tenant }: CollectionPageProps) {
     : "";
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-muted/40 via-background to-background">
+    <StorefrontThemeProvider tenant={tenant}>
+      <div className="min-h-screen bg-gradient-to-b from-muted/40 via-background to-background">
       <div className="mx-auto max-w-2xl px-4 py-8 sm:py-12">
         <p className="mb-6">
           <Link
@@ -176,5 +178,6 @@ export function CollectionPage({ tenant }: CollectionPageProps) {
         )}
       </div>
     </div>
+    </StorefrontThemeProvider>
   );
 }

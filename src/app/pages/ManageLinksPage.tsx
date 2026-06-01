@@ -392,9 +392,12 @@ export function ManageLinksPage({ tenant }: ManageLinksPageProps) {
           }
         }}
       >
-        <DialogContent className="max-h-[92vh] overflow-y-auto">
-          <form onSubmit={handleSubmitSave}>
-            <DialogHeader>
+        <DialogContent className="max-h-[min(92vh,44rem)] overflow-hidden p-0 sm:max-w-lg">
+          <form
+            className="flex max-h-[min(92vh,44rem)] flex-col"
+            onSubmit={handleSubmitSave}
+          >
+            <DialogHeader className="shrink-0 space-y-1.5 px-6 pt-6 pb-2 pr-12">
               <DialogTitle>{editId ? t.linkEdit : t.linkAdd}</DialogTitle>
               <DialogDescription className="text-pretty">
                 {editId
@@ -403,18 +406,19 @@ export function ManageLinksPage({ tenant }: ManageLinksPageProps) {
               </DialogDescription>
             </DialogHeader>
 
-            <div className="grid gap-4 py-4">
-              <div className="grid gap-2">
-                <Label htmlFor={`${idBase}-name`}>{t.formNameLabel}</Label>
-                <Input
-                  id={`${idBase}-name`}
-                  value={form.name}
-                  required
-                  onChange={(e) =>
-                    setForm((s) => ({ ...s, name: e.target.value }))
-                  }
-                />
-              </div>
+            <div className="max-h-[calc(min(92vh,44rem)-7.25rem)] overflow-y-auto px-6 py-4">
+              <div className="grid gap-4">
+                <div className="grid gap-2">
+                  <Label htmlFor={`${idBase}-name`}>{t.formNameLabel}</Label>
+                  <Input
+                    id={`${idBase}-name`}
+                    value={form.name}
+                    required
+                    onChange={(e) =>
+                      setForm((s) => ({ ...s, name: e.target.value }))
+                    }
+                  />
+                </div>
               <div className="grid gap-2">
                 <Label htmlFor={`${idBase}-dst`}>{t.formDestinationLabel}</Label>
                 <Input
@@ -547,9 +551,10 @@ export function ManageLinksPage({ tenant }: ManageLinksPageProps) {
                   }
                 />
               </div>
+              </div>
             </div>
 
-            <DialogFooter className="gap-2 sm:gap-0">
+            <DialogFooter className="shrink-0 gap-3 border-t border-border/80 bg-background px-6 pt-4 pb-6">
               <DialogClose asChild>
                 <Button type="button" variant="outline" disabled={saving}>
                   {t.dialogCancel}

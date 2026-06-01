@@ -13,6 +13,15 @@ import {
   uploadUserProfileImage,
 } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
+import {
+  SOCIAL_PLATFORM_LABELS,
+  buildSocialLinksPayload,
+  socialLinksToFormValues,
+  validateSocialLinkForm,
+} from "@/lib/social-links";
+import { SocialLinksEditor } from "../components/SocialLinksEditor";
+import { StoreThemePicker } from "../components/StoreThemePicker";
+import { StorefrontThemeProvider } from "../storefront/StorefrontThemeContext";
 import { Button } from "../components/ui/button";
 import {
   Card,
@@ -48,6 +57,10 @@ export function StoreProfilePage({ tenant }: StoreProfilePageProps) {
   const [ownerName, setOwnerName] = useState("");
   const [ownerEmail, setOwnerEmail] = useState("");
   const [profileImageUrl, setProfileImageUrl] = useState<string | null>(null);
+  const [socialLinkValues, setSocialLinkValues] = useState(() =>
+    socialLinksToFormValues(null),
+  );
+  const [socialLinksResetKey, setSocialLinksResetKey] = useState(0);
 
   const [storeTitle, setStoreTitle] = useState("");
   const [storeDescription, setStoreDescription] = useState("");
@@ -76,6 +89,8 @@ export function StoreProfilePage({ tenant }: StoreProfilePageProps) {
         setOwnerName(user.name);
         setOwnerEmail(user.email);
         setProfileImageUrl(resolveApiMediaUrl(user.profileImageUrl));
+        setSocialLinkValues(socialLinksToFormValues(user.socialLinks));
+        setSocialLinksResetKey((k) => k + 1);
         setStoreTitle(store.title ?? "");
         setStoreDescription(store.description ?? "");
         setBackgroundImageUrl(resolveApiMediaUrl(store.backgroundImageUrl));
@@ -150,10 +165,20 @@ export function StoreProfilePage({ tenant }: StoreProfilePageProps) {
       toast.error(t.profileOwnerNameTooShort);
       return;
     }
+    const invalidPlatform = validateSocialLinkForm(socialLinkValues);
+    if (invalidPlatform) {
+      toast.error(
+        t.profileSocialLinkInvalid(SOCIAL_PLATFORM_LABELS[invalidPlatform]),
+      );
+      return;
+    }
     setSaving(true);
     try {
       const [user, store] = await Promise.all([
-        patchUserMe(tenant, token, { name: trimmedName }),
+        patchUserMe(tenant, token, {
+          name: trimmedName,
+          socialLinks: buildSocialLinksPayload(socialLinkValues),
+        }),
         patchStoreMe(tenant, token, {
           title: storeTitle.trim() || null,
           description: storeDescription,
@@ -162,6 +187,8 @@ export function StoreProfilePage({ tenant }: StoreProfilePageProps) {
       setOwnerName(user.name);
       setOwnerEmail(user.email);
       setProfileImageUrl(resolveApiMediaUrl(user.profileImageUrl));
+      setSocialLinkValues(socialLinksToFormValues(user.socialLinks));
+      setSocialLinksResetKey((k) => k + 1);
       setStoreTitle(store.title ?? "");
       setStoreDescription(store.description ?? "");
       setBackgroundImageUrl(resolveApiMediaUrl(store.backgroundImageUrl));
@@ -186,12 +213,12 @@ export function StoreProfilePage({ tenant }: StoreProfilePageProps) {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <form className="space-y-10" onSubmit={handleSave}>
+          <form className="space-y-8" onSubmit={handleSave}>
             <fieldset
               disabled={loading || saving || !token}
-              className="space-y-10"
+              className="space-y-8"
             >
-              <section className="space-y-6">
+              <section className="space-y-5">
                 <div>
                   <h3 className="text-lg font-semibold tracking-tight">
                     {t.profileSectionOwner}
@@ -269,9 +296,27 @@ export function StoreProfilePage({ tenant }: StoreProfilePageProps) {
                     </div>
                   </div>
                 </div>
+
+                <div className="space-y-3 border-t pt-5">
+                  <div>
+                    <h4 className="text-sm font-semibold tracking-tight">
+                      {t.profileSectionSocialLinks}
+                    </h4>
+                    <p className="mt-0.5 text-xs text-muted-foreground">
+                      {t.profileSectionSocialLinksHint}
+                    </p>
+                  </div>
+                  <SocialLinksEditor
+                    idBase={idBase}
+                    values={socialLinkValues}
+                    onChange={setSocialLinkValues}
+                    resetKey={socialLinksResetKey}
+                    disabled={loading || saving || !token}
+                  />
+                </div>
               </section>
 
-              <section className="space-y-6 border-t pt-8">
+              <section className="space-y-5 border-t pt-6">
                 <div>
                   <h3 className="text-lg font-semibold tracking-tight">
                     {t.profileSectionStore}
@@ -342,13 +387,28 @@ export function StoreProfilePage({ tenant }: StoreProfilePageProps) {
                 </div>
               </section>
 
-              <div className="flex flex-wrap gap-3 border-t pt-6">
-                <Button type="submit" disabled={!token || saving}>
-                  {saving ? t.profileSaving : t.profileSave}
-                </Button>
-              </div>
             </fieldset>
+
+            <div className="sticky bottom-0 z-10 -mx-6 flex flex-wrap gap-3 border-t border-border/70 bg-card/95 px-6 py-3 backdrop-blur supports-[backdrop-filter]:bg-card/80">
+              <Button type="submit" disabled={!token || saving || loading}>
+                {saving ? t.profileSaving : t.profileSave}
+              </Button>
+            </div>
           </form>
+        </CardContent>
+      </Card>
+
+      <Card className="mt-6 border-border/70 shadow-sm">
+        <CardHeader className="space-y-2">
+          <CardTitle>{t.profileSectionStorefrontTheme}</CardTitle>
+          <CardDescription className="max-w-[60ch] text-pretty">
+            {t.profileSectionStorefrontThemeHint}
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <StorefrontThemeProvider tenant={tenant}>
+            <StoreThemePicker />
+          </StorefrontThemeProvider>
         </CardContent>
       </Card>
     </main>

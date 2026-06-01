@@ -16,7 +16,7 @@ import {
   deleteLinkCollection,
   fetchLinkCollectionById,
   fetchLinkCollections,
-  fetchLinks,
+  fetchLinksList,
   patchLinkCollection,
 } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
@@ -56,6 +56,8 @@ import { Input } from "../components/ui/input";
 import { Label } from "../components/ui/label";
 import { ScrollArea } from "../components/ui/scroll-area";
 import { cn } from "../components/ui/utils";
+import { Pagination } from "../components/Pagination";
+import { SearchInput } from "../components/SearchInput";
 
 type ManageCollectionsPageProps = {
   tenant: string;
@@ -69,6 +71,8 @@ type DetailBaseline = {
 
 const LINK_PICK_FALLBACK_IMG =
   "https://images.unsplash.com/photo-1579546929518-9e396f3cc809?w=384&h=216&fit=crop";
+
+const PICKER_PAGE_SIZE = 10;
 
 function shortDestinationLabel(href: string, max = 52): string {
   const t = href.trim();
@@ -195,11 +199,13 @@ export function ManageCollectionsPage({ tenant }: ManageCollectionsPageProps) {
   const idBase = useId();
 
   const [collections, setCollections] = useState<CollectionListItem[]>([]);
-  const [linksState, setLinksState] = useState<StoreLink[]>([]);
+  const [activeLinksTotal, setActiveLinksTotal] = useState(0);
   const [loadCollErr, setLoadCollErr] = useState<string | null>(null);
-  const [loadLinksErr, setLoadLinksErr] = useState<string | null>(null);
+  const [activeLinkCountErr, setActiveLinkCountErr] = useState<string | null>(
+    null,
+  );
   const [loadingCollections, setLoadingCollections] = useState(true);
-  const [loadingLinks, setLoadingLinks] = useState(true);
+  const [activeLinkCountLoading, setActiveLinkCountLoading] = useState(true);
 
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingRow, setEditingRow] = useState<CollectionListItem | null>(
@@ -217,15 +223,13 @@ export function ManageCollectionsPage({ tenant }: ManageCollectionsPageProps) {
     null,
   );
 
-  const activeLinks = useMemo(
-    () =>
-      [...linksState.filter((l) => l.isActive)].sort((a, b) =>
-        a.name.localeCompare(b.name),
-      ),
-    [linksState],
-  );
-
-  const inactiveCount = linksState.filter((l) => !l.isActive).length;
+  const [pickerSearchInput, setPickerSearchInput] = useState("");
+  const [pickerSearch, setPickerSearch] = useState("");
+  const [pickerPage, setPickerPage] = useState(1);
+  const [pickerLinks, setPickerLinks] = useState<StoreLink[]>([]);
+  const [pickerTotal, setPickerTotal] = useState(0);
+  const [pickerLoading, setPickerLoading] = useState(false);
+  const [pickerLoadErr, setPickerLoadErr] = useState<string | null>(null);
 
   const sortedCollections = useMemo(
     () =>
@@ -235,21 +239,6 @@ export function ManageCollectionsPage({ tenant }: ManageCollectionsPageProps) {
       ),
     [collections],
   );
-
-  const pickerLinks = useMemo(() => {
-    const byId = new Map<string, StoreLink>();
-    for (const l of activeLinks) {
-      byId.set(l.id, l);
-    }
-    if (detailBaseline) {
-      for (const id of detailBaseline.memberIds) {
-        if (byId.has(id)) continue;
-        const row = linksState.find((x) => x.id === id);
-        if (row) byId.set(id, row);
-      }
-    }
-    return [...byId.values()].sort((a, b) => a.name.localeCompare(b.name));
-  }, [activeLinks, detailBaseline, linksState]);
 
   function reload() {
     if (!token) return;
@@ -264,27 +253,81 @@ export function ManageCollectionsPage({ tenant }: ManageCollectionsPageProps) {
       )
       .finally(() => setLoadingCollections(false));
 
-    setLoadingLinks(true);
-    setLoadLinksErr(null);
-    fetchLinks(tenant, token)
-      .then(setLinksState)
+    setActiveLinkCountLoading(true);
+    setActiveLinkCountErr(null);
+    fetchLinksList(tenant, token, { page: 1, limit: 1 })
+      .then((r) => setActiveLinksTotal(r.total))
       .catch((err) =>
-        setLoadLinksErr(
+        setActiveLinkCountErr(
           err instanceof ApiError ? err.message : t.failedLoadLinks,
         ),
       )
-      .finally(() => setLoadingLinks(false));
+      .finally(() => setActiveLinkCountLoading(false));
   }
 
   useEffect(() => {
     if (!token) {
       setLoadingCollections(false);
-      setLoadingLinks(false);
+      setActiveLinkCountLoading(false);
       return;
     }
     reload();
     // eslint-disable-next-line react-hooks/exhaustive-deps -- initial load only
   }, [tenant, token]);
+
+  useEffect(() => {
+    const handle = window.setTimeout(() => {
+      setPickerSearch(pickerSearchInput.trim());
+    }, 300);
+    return () => window.clearTimeout(handle);
+  }, [pickerSearchInput]);
+
+  useEffect(() => {
+    if (!dialogOpen || !token) return;
+    if (editingRow && detailLoading) return;
+
+    let cancelled = false;
+    setPickerLoading(true);
+    setPickerLoadErr(null);
+
+    fetchLinksList(tenant, token, {
+      page: pickerPage,
+      limit: PICKER_PAGE_SIZE,
+      search: pickerSearch || undefined,
+    })
+      .then((r) => {
+        if (cancelled) return;
+        setPickerLinks(r.items.filter((l) => l.isActive));
+        setPickerTotal(r.total);
+      })
+      .catch((err) => {
+        if (cancelled) return;
+        setPickerLoadErr(
+          err instanceof ApiError ? err.message : t.failedLoadLinks,
+        );
+      })
+      .finally(() => {
+        if (!cancelled) setPickerLoading(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [
+    dialogOpen,
+    token,
+    pickerPage,
+    pickerSearch,
+    tenant,
+    editingRow,
+    detailLoading,
+    t.failedLoadLinks,
+  ]);
+
+  function onPickerSearchChange(value: string) {
+    setPickerSearchInput(value);
+    setPickerPage(1);
+  }
 
   function clearDialogState() {
     setEditingRow(null);
@@ -293,6 +336,12 @@ export function ManageCollectionsPage({ tenant }: ManageCollectionsPageProps) {
     setCollectionName("");
     setSlug("");
     setPickedIds(new Set());
+    setPickerSearchInput("");
+    setPickerSearch("");
+    setPickerPage(1);
+    setPickerLinks([]);
+    setPickerTotal(0);
+    setPickerLoadErr(null);
   }
 
   function openCreateDialog() {
@@ -463,8 +512,12 @@ export function ManageCollectionsPage({ tenant }: ManageCollectionsPageProps) {
     }
   }
 
-  const canPickLinksCreate = activeLinks.length >= 2;
-  const hydrationLoading = loadingCollections || loadingLinks;
+  const canPickLinksCreate = activeLinksTotal >= 2;
+  const hydrationLoading = loadingCollections || activeLinkCountLoading;
+  const pickerTotalPages = Math.max(
+    1,
+    Math.ceil(pickerTotal / PICKER_PAGE_SIZE),
+  );
   const isEditMode = editingRow !== null;
   const editorLocked =
     saving ||
@@ -497,7 +550,7 @@ export function ManageCollectionsPage({ tenant }: ManageCollectionsPageProps) {
 
       {!canPickLinksCreate &&
         !hydrationLoading &&
-        !loadLinksErr && (
+        !activeLinkCountErr && (
           <Card className="mb-6 border-dashed bg-muted/20">
             <CardContent className="flex flex-wrap items-start gap-3 py-4 text-sm text-muted-foreground">
               <Layers2
@@ -667,37 +720,61 @@ export function ManageCollectionsPage({ tenant }: ManageCollectionsPageProps) {
                 </div>
                 <div className="grid min-h-[180px] flex-1 gap-2">
                   <Label>{t.collectionSelectLinksHeading}</Label>
+                  <SearchInput
+                    value={pickerSearchInput}
+                    onChange={onPickerSearchChange}
+                    placeholder={t.collectionPickerSearchPlaceholder}
+                  />
                   <p className="text-xs text-muted-foreground">
-                    {pickedIds.size}/{pickerLinks.length} ·{" "}
-                    {t.collectionMinTwoLinks}
+                    {t.collectionPickerSelectedCount(
+                      pickedIds.size,
+                      pickerTotal,
+                    )}{" "}
+                    · {t.collectionMinTwoLinks}
                   </p>
-                  {inactiveCount > 0 && (
-                    <p className="text-xs text-amber-700 dark:text-amber-400/90">
-                      {t.collectionInactiveLinksExcluded}
-                    </p>
-                  )}
-                  {loadLinksErr ? (
-                    <p className="text-sm text-destructive">{loadLinksErr}</p>
+                  <p className="text-xs text-amber-700 dark:text-amber-400/90">
+                    {t.collectionInactiveLinksExcluded}
+                  </p>
+                  {pickerLoadErr ? (
+                    <p className="text-sm text-destructive">{pickerLoadErr}</p>
                   ) : (
-                    <ScrollArea className="h-[min(22rem,calc(100vh-22rem))] rounded-xl border bg-muted/15 px-3 py-3">
-                      <div className="space-y-3 pr-4">
-                        {pickerLinks.map((link) => {
-                          const cid = `${idBase}-li-${link.id}`;
-                          const checked = pickedIds.has(link.id);
-                          return (
-                            <CollectionLinkPickCard
-                              key={link.id}
-                              link={link}
-                              checked={checked}
-                              disabled={editorLocked}
-                              inputId={cid}
-                              onToggle={() => togglePick(link.id)}
-                              t={t}
-                            />
-                          );
-                        })}
-                      </div>
-                    </ScrollArea>
+                    <>
+                      <ScrollArea className="h-[min(22rem,calc(100vh-22rem))] rounded-xl border bg-muted/15 px-3 py-3">
+                        <div className="space-y-3 pr-4">
+                          {pickerLoading && pickerLinks.length === 0 ? (
+                            <p className="py-6 text-center text-sm text-muted-foreground">
+                              …
+                            </p>
+                          ) : pickerLinks.length === 0 ? (
+                            <p className="py-6 text-center text-sm text-muted-foreground">
+                              {t.collectionPickerEmpty}
+                            </p>
+                          ) : (
+                            pickerLinks.map((link) => {
+                              const cid = `${idBase}-li-${link.id}`;
+                              const checked = pickedIds.has(link.id);
+                              return (
+                                <CollectionLinkPickCard
+                                  key={link.id}
+                                  link={link}
+                                  checked={checked}
+                                  disabled={editorLocked}
+                                  inputId={cid}
+                                  onToggle={() => togglePick(link.id)}
+                                  t={t}
+                                />
+                              );
+                            })
+                          )}
+                        </div>
+                      </ScrollArea>
+                      <Pagination
+                        currentPage={pickerPage}
+                        totalPages={pickerTotalPages}
+                        onPageChange={setPickerPage}
+                        className="mt-2"
+                      />
+                    </>
                   )}
                 </div>
               </div>
