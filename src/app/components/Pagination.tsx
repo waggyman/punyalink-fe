@@ -1,22 +1,31 @@
 import { ChevronLeft, ChevronRight } from "lucide-react";
 
+import { cn } from "./ui/utils";
+
 interface PaginationProps {
   currentPage: number;
   totalPages: number;
   onPageChange: (page: number) => void;
+  className?: string;
 }
 
 export function Pagination({
   currentPage,
   totalPages,
   onPageChange,
+  className,
 }: PaginationProps) {
   if (totalPages <= 1) return null;
 
   const pages = Array.from({ length: totalPages }, (_, i) => i + 1);
 
   return (
-    <div className="flex items-center justify-center gap-2 mt-8">
+    <div
+      className={cn(
+        "mt-8 flex items-center justify-center gap-2",
+        className,
+      )}
+    >
       <button
         onClick={() => onPageChange(currentPage - 1)}
         disabled={currentPage === 1}

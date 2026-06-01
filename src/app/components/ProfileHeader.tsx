@@ -1,5 +1,8 @@
+import type { SocialLinks } from "@/lib/types";
+
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
 import { Badge } from "./ui/badge";
+import { SocialLinks as SocialLinksBar } from "./SocialLinks";
 
 interface ProfileHeaderProps {
   name: string;
@@ -7,6 +10,7 @@ interface ProfileHeaderProps {
   avatar: string;
   banner?: string;
   tags?: string[];
+  socialLinks?: SocialLinks | null;
 }
 
 export function ProfileHeader({
@@ -15,6 +19,7 @@ export function ProfileHeader({
   avatar,
   banner,
   tags,
+  socialLinks,
 }: ProfileHeaderProps) {
   const bannerSrc =
     banner?.trim() ||
@@ -29,7 +34,7 @@ export function ProfileHeader({
 
       <div className="relative px-4 py-8 text-center">
         <div className="relative mb-4 inline-block">
-          <div className="absolute inset-0 animate-pulse rounded-full bg-gradient-to-r from-primary to-purple-500 opacity-50 blur-md" />
+          <div className="absolute inset-0 animate-pulse rounded-full bg-gradient-to-r from-primary to-[var(--store-header-glow)] opacity-50 blur-md" />
           <Avatar className="relative h-24 w-24 border-4 border-background shadow-xl">
             <AvatarImage src={avatar} alt={name} />
             <AvatarFallback>{name.charAt(0)}</AvatarFallback>
@@ -43,6 +48,8 @@ export function ProfileHeader({
         <p className="mx-auto mb-4 max-w-md leading-relaxed text-white/90 drop-shadow">
           {bio}
         </p>
+
+        <SocialLinksBar links={socialLinks} className="mb-4" />
 
         {tags && tags.length > 0 && (
           <div className="flex flex-wrap justify-center gap-2">

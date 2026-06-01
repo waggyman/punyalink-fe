@@ -1,57 +1,39 @@
+import type { SocialLinks as SocialLinksMap } from "@/lib/types";
+import { getActiveSocialLinks } from "@/lib/social-links";
+import { SOCIAL_PLATFORM_LABELS } from "@/lib/social-links";
+
 import { Button } from "./ui/button";
-import { Instagram, Twitter, Github, Linkedin, Mail, Globe } from "lucide-react";
+import { SocialPlatformIcon } from "./SocialPlatformIcon";
 
-interface SocialLink {
-  type: "instagram" | "twitter" | "github" | "linkedin" | "email" | "website";
-  url: string;
-}
-
-interface SocialLinksProps {
-  links: SocialLink[];
-}
-
-const socialIcons = {
-  instagram: Instagram,
-  twitter: Twitter,
-  github: Github,
-  linkedin: Linkedin,
-  email: Mail,
-  website: Globe,
+type SocialLinksProps = {
+  links: SocialLinksMap | null | undefined;
+  className?: string;
 };
 
-const socialLabels = {
-  instagram: "Instagram",
-  twitter: "Twitter",
-  github: "GitHub",
-  linkedin: "LinkedIn",
-  email: "Email",
-  website: "Website",
-};
+export function SocialLinks({ links, className }: SocialLinksProps) {
+  const active = getActiveSocialLinks(links);
+  if (active.length === 0) return null;
 
-export function SocialLinks({ links }: SocialLinksProps) {
   return (
-    <div className="flex flex-wrap gap-3 justify-center">
-      {links.map((link, index) => {
-        const Icon = socialIcons[link.type];
-        return (
-          <Button
-            key={index}
-            variant="outline"
-            size="icon"
-            className="rounded-full h-12 w-12 hover:scale-110 transition-transform duration-200"
-            asChild
+    <div className={`flex flex-wrap justify-center gap-3 ${className ?? ""}`}>
+      {active.map(({ platform, url }) => (
+        <Button
+          key={platform}
+          variant="outline"
+          size="icon"
+          className="size-11 rounded-full border-white/30 bg-white/10 text-white backdrop-blur-sm transition-transform hover:scale-110 hover:bg-white/20"
+          asChild
+        >
+          <a
+            href={url}
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label={SOCIAL_PLATFORM_LABELS[platform]}
           >
-            <a
-              href={link.url}
-              target="_blank"
-              rel="noopener noreferrer"
-              aria-label={socialLabels[link.type]}
-            >
-              <Icon className="h-5 w-5" />
-            </a>
-          </Button>
-        );
-      })}
+            <SocialPlatformIcon platform={platform} className="size-5" />
+          </a>
+        </Button>
+      ))}
     </div>
   );
 }
