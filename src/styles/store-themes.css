@@ -1,0 +1,89 @@
+/**
+ * Storefront-only theme tokens (scoped via [data-store-theme] on .storefront-theme-root).
+ * Dashboard / admin keep the global theme.css defaults.
+ */
+
+.storefront-theme-root {
+  --store-header-glow: var(--primary);
+  --store-page-overlay: color-mix(in oklch, var(--background) 90%, transparent);
+}
+
+[data-store-theme="violet-classic"] {
+  --background: oklch(0.99 0.006 294);
+  --foreground: oklch(0.145 0 0);
+  --card: #ffffff;
+  --card-foreground: oklch(0.145 0 0);
+  --primary: #7c3aed;
+  --primary-foreground: #ffffff;
+  --secondary: oklch(0.96 0.018 294);
+  --secondary-foreground: oklch(0.28 0.09 294);
+  --muted: oklch(0.967 0.008 294);
+  --muted-foreground: oklch(0.52 0.04 294);
+  --accent: oklch(0.958 0.025 294);
+  --accent-foreground: oklch(0.22 0.08 294);
+  --border: oklch(0.92 0.012 294);
+  --input-background: oklch(0.982 0.012 294);
+  --ring: oklch(0.58 0.22 294);
+  --store-header-glow: #a78bfa;
+  --store-page-overlay: color-mix(in oklch, #faf5ff 88%, transparent);
+}
+
+[data-store-theme="minimal-slate"] {
+  --background: #f8fafc;
+  --foreground: #0f172a;
+  --card: #ffffff;
+  --card-foreground: #0f172a;
+  --primary: #334155;
+  --primary-foreground: #ffffff;
+  --secondary: #f1f5f9;
+  --secondary-foreground: #334155;
+  --muted: #f1f5f9;
+  --muted-foreground: #64748b;
+  --accent: #e2e8f0;
+  --accent-foreground: #1e293b;
+  --border: #e2e8f0;
+  --input-background: #ffffff;
+  --ring: #64748b;
+  --store-header-glow: #94a3b8;
+  --store-page-overlay: color-mix(in oklch, #f8fafc 90%, transparent);
+}
+
+[data-store-theme="ocean-plus"] {
+  --background: #f0fdfa;
+  --foreground: #134e4a;
+  --card: #ffffff;
+  --card-foreground: #134e4a;
+  --primary: #0d9488;
+  --primary-foreground: #ffffff;
+  --secondary: #ccfbf1;
+  --secondary-foreground: #115e59;
+  --muted: #ecfeff;
+  --muted-foreground: #5eead4;
+  --accent: #99f6e4;
+  --accent-foreground: #134e4a;
+  --border: #99f6e4;
+  --input-background: #ffffff;
+  --ring: #14b8a6;
+  --store-header-glow: #2dd4bf;
+  --store-page-overlay: color-mix(in oklch, #f0fdfa 88%, transparent);
+}
+
+[data-store-theme="sunset-plus"] {
+  --background: #fff1f2;
+  --foreground: #881337;
+  --card: #ffffff;
+  --card-foreground: #881337;
+  --primary: #e11d48;
+  --primary-foreground: #ffffff;
+  --secondary: #ffe4e6;
+  --secondary-foreground: #9f1239;
+  --muted: #fff1f2;
+  --muted-foreground: #fb7185;
+  --accent: #fecdd3;
+  --accent-foreground: #9f1239;
+  --border: #fecdd3;
+  --input-background: #ffffff;
+  --ring: #f43f5e;
+  --store-header-glow: #fb7185;
+  --store-page-overlay: color-mix(in oklch, #fff1f2 88%, transparent);
+}

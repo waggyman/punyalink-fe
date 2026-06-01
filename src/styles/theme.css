@@ -203,3 +203,17 @@
     animation-delay: 2s;
   }
 }
+
+/* Sonner — keep error descriptions readable */
+[data-sonner-toast] [data-description] {
+  color: color-mix(in oklch, var(--foreground) 88%, transparent);
+  opacity: 1;
+}
+
+[data-sonner-toast][data-type="error"] [data-title] {
+  color: var(--destructive);
+}
+
+[data-sonner-toast][data-type="error"] {
+  border-color: color-mix(in oklch, var(--destructive) 45%, var(--border));
+}
