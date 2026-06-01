@@ -1,11 +1,20 @@
 import type {
   CollectionDetail,
   CollectionListItem,
+  LinkCollectionsListResponse,
   CreateLinkCollectionPayload,
+  DashboardResponse,
+  DashboardTopClickedLink,
   PatchLinkCollectionPayload,
   CreateLinkPayload,
   Link,
+  LinksListResponse,
+  FetchLinksQuery,
   LoginResponse,
+  MembershipMe,
+  MembershipPlan,
+  ConfirmPlusResponse,
+  PlusPurchaseResponse,
   PatchLinkPayload,
   PatchStoreMePayload,
   PatchUserMePayload,
@@ -14,6 +23,14 @@ import type {
   StoreMe,
   SubdomainAvailabilityResponse,
   UserMe,
+  AdminLoginResponse,
+  AdminStoresListResponse,
+  AdminStoreDetail,
+  AdminPurchasesListResponse,
+  AdminPurchaseDetail,
+  AddMembershipPayload,
+  FetchAdminStoresQuery,
+  FetchAdminPurchasesQuery,
 } from "./types";
 
 export const API_BASE = import.meta.env.VITE_API_URL ?? "http://localhost:3000";
@@ -54,6 +71,14 @@ function normalizeLink(raw: Record<string, unknown>): Link {
         ? raw.image
         : null;
   return { ...raw, imageUrl } as Link;
+}
+
+function unwrapListItems<T>(data: T[] | { items?: T[] }): T[] {
+  if (Array.isArray(data)) return data;
+  if (data && typeof data === "object" && Array.isArray(data.items)) {
+    return data.items;
+  }
+  return [];
 }
 
 function normalizeCollectionDetail(raw: CollectionDetail): CollectionDetail {
@@ -160,16 +185,69 @@ export function resendEmailOtp(target: string): Promise<void> {
   });
 }
 
+function normalizeLinksListResponse(
+  data: Link[] | LinksListResponse | Record<string, unknown>[],
+): LinksListResponse {
+  if (Array.isArray(data)) {
+    return {
+      total: data.length,
+      items: data.map((row) =>
+        normalizeLink(row as Record<string, unknown>),
+      ),
+    };
+  }
+  const envelope = data as LinksListResponse;
+  return {
+    total: envelope.total ?? envelope.items?.length ?? 0,
+    page: envelope.page,
+    limit: envelope.limit,
+    items: (envelope.items ?? []).map((row) =>
+      normalizeLink(row as unknown as Record<string, unknown>),
+    ),
+  };
+}
+
+export function fetchLinksList(
+  tenant: string,
+  token?: string,
+  query: FetchLinksQuery = {},
+): Promise<LinksListResponse> {
+  const params = new URLSearchParams();
+  if (query.page != null) params.set("page", String(query.page));
+  if (query.limit != null) params.set("limit", String(query.limit));
+  const search = query.search?.trim();
+  if (search) params.set("search", search);
+  const qs = params.toString();
+  return api<Link[] | LinksListResponse>(
+    qs ? `/links?${qs}` : "/links",
+    { tenant, token },
+  ).then(normalizeLinksListResponse);
+}
+
+/** Fetches all link pages (for storefront / manage links). */
+export async function fetchAllLinks(
+  tenant: string,
+  token?: string,
+): Promise<Link[]> {
+  const pageSize = 100;
+  const first = await fetchLinksList(tenant, token, {
+    page: 1,
+    limit: pageSize,
+  });
+  const all = [...first.items];
+  const totalPages = Math.max(1, Math.ceil(first.total / pageSize));
+  for (let page = 2; page <= totalPages; page++) {
+    const next = await fetchLinksList(tenant, token, { page, limit: pageSize });
+    all.push(...next.items);
+  }
+  return all;
+}
+
 export function fetchLinks(
   tenant: string,
   token?: string,
 ): Promise<Link[]> {
-  return api<Link[] | Record<string, unknown>[]>("/links", {
-    tenant,
-    token,
-  }).then((rows) =>
-    Array.isArray(rows) ? rows.map((row) => normalizeLink(row)) : [],
-  );
+  return fetchAllLinks(tenant, token);
 }
 
 export function visitLink(
@@ -198,7 +276,10 @@ export function fetchLinkCollections(
   tenant: string,
   token: string,
 ): Promise<CollectionListItem[]> {
-  return api<CollectionListItem[]>("/link-collections", { tenant, token });
+  return api<CollectionListItem[] | LinkCollectionsListResponse>(
+    "/link-collections",
+    { tenant, token },
+  ).then(unwrapListItems);
 }
 
 export function createLinkCollection(
@@ -391,6 +472,7 @@ export function patchUserMe(
 ): Promise<UserMe> {
   const payload: PatchUserMePayload = {};
   if (body.name !== undefined) payload.name = body.name.trim();
+  if (body.socialLinks !== undefined) payload.socialLinks = body.socialLinks;
   return api<UserMe>("/users/me", {
     method: "PATCH",
     tenant,
@@ -452,4 +534,160 @@ export function uploadStoreBackgroundImage(
 /** Public storefront card; no JWT. */
 export function fetchPublicStore(tenant: string): Promise<PublicStoreCard> {
   return api<PublicStoreCard>("/stores/public", { tenant });
+}
+
+function normalizeTopClickedLink(
+  raw: Record<string, unknown>,
+): DashboardTopClickedLink {
+  const imageUrl =
+    typeof raw.imageUrl === "string"
+      ? raw.imageUrl
+      : typeof raw.image === "string"
+        ? raw.image
+        : null;
+  return { ...raw, imageUrl } as DashboardTopClickedLink;
+}
+
+function normalizeDashboard(raw: DashboardResponse): DashboardResponse {
+  return {
+    ...raw,
+    stats: {
+      ...raw.stats,
+      topClickedLinks: (raw.stats.topClickedLinks ?? []).map((link) =>
+        normalizeTopClickedLink(link as unknown as Record<string, unknown>),
+      ),
+    },
+  };
+}
+
+/** Owner dashboard aggregate — stats, profile banner, membership, user, store. */
+export function fetchDashboard(
+  tenant: string,
+  token: string,
+): Promise<DashboardResponse> {
+  return api<DashboardResponse>("/dashboard", { tenant, token }).then(
+    normalizeDashboard,
+  );
+}
+
+/** Current store membership / plan entitlements. */
+export function fetchMembershipMe(
+  tenant: string,
+  token: string,
+): Promise<MembershipMe> {
+  return api<MembershipMe>("/memberships/me", { tenant, token });
+}
+
+/** Catalog of available membership plans. */
+export function fetchMembershipPlans(
+  tenant: string,
+  token: string,
+): Promise<MembershipPlan[]> {
+  return api<MembershipPlan[]>("/memberships", { tenant, token });
+}
+
+/** Start Plus purchase — returns unique invoice amount and bank transfer details. */
+export function purchasePlusMembership(
+  tenant: string,
+  token: string,
+): Promise<PlusPurchaseResponse> {
+  return api<PlusPurchaseResponse>("/memberships/purchase-plus", {
+    method: "POST",
+    tenant,
+    token,
+    body: JSON.stringify({}),
+  });
+}
+
+/** Upload transfer receipt for the active Plus purchase. */
+export function confirmPlusPurchase(
+  tenant: string,
+  token: string,
+  file: File,
+): Promise<ConfirmPlusResponse> {
+  const formData = new FormData();
+  formData.append("file", file);
+  return api<ConfirmPlusResponse>("/memberships/confirm-plus", {
+    method: "POST",
+    tenant,
+    token,
+    body: formData,
+  });
+}
+
+function buildQueryString(
+  params: Record<string, string | number | undefined>,
+): string {
+  const search = new URLSearchParams();
+  for (const [key, value] of Object.entries(params)) {
+    if (value === undefined || value === "") continue;
+    search.set(key, String(value));
+  }
+  const qs = search.toString();
+  return qs ? `?${qs}` : "";
+}
+
+/** Apex-only superadmin login — no tenant header. */
+export function adminLogin(
+  email: string,
+  password: string,
+): Promise<AdminLoginResponse> {
+  return api<AdminLoginResponse>("/admin/login", {
+    method: "POST",
+    body: JSON.stringify({ email: email.trim(), password }),
+  });
+}
+
+export function fetchAdminStores(
+  token: string,
+  query: FetchAdminStoresQuery = {},
+): Promise<AdminStoresListResponse> {
+  const qs = buildQueryString({
+    page: query.page,
+    limit: query.limit,
+  });
+  return api<AdminStoresListResponse>(`/admin/stores${qs}`, { token });
+}
+
+export function fetchAdminStoreById(
+  token: string,
+  storeId: string,
+): Promise<AdminStoreDetail> {
+  return api<AdminStoreDetail>(`/admin/stores/${encodeURIComponent(storeId)}`, {
+    token,
+  });
+}
+
+export function fetchAdminPurchases(
+  token: string,
+  query: FetchAdminPurchasesQuery = {},
+): Promise<AdminPurchasesListResponse> {
+  const qs = buildQueryString({
+    page: query.page,
+    limit: query.limit,
+    search: query.search?.trim(),
+    status: query.status || undefined,
+  });
+  return api<AdminPurchasesListResponse>(`/admin/purchases${qs}`, { token });
+}
+
+export function fetchAdminPurchaseById(
+  token: string,
+  purchaseId: string,
+): Promise<AdminPurchaseDetail> {
+  return api<AdminPurchaseDetail>(
+    `/admin/purchases/${encodeURIComponent(purchaseId)}`,
+    { token },
+  );
+}
+
+export function addAdminMembership(
+  token: string,
+  body: AddMembershipPayload,
+): Promise<MembershipMe> {
+  return api<MembershipMe>("/admin/add-membership", {
+    method: "POST",
+    token,
+    body: JSON.stringify(body),
+  });
 }
