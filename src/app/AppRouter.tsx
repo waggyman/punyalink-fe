@@ -1,10 +1,13 @@
 import { Navigate, Route, Routes } from "react-router";
 import { AuthProvider } from "@/lib/auth";
+import { AdminAuthProvider } from "@/lib/admin-auth";
 import { getTenantFromHost } from "@/lib/tenant";
 import { ProtectedRoute } from "./components/ProtectedRoute";
+import { AdminProtectedRoute } from "./components/AdminProtectedRoute";
 import { PublicStorePage } from "./pages/PublicStorePage";
 import { LoginPage } from "./pages/LoginPage";
 import { DashboardLayout } from "./layouts/DashboardLayout";
+import { AdminLayout } from "./layouts/AdminLayout";
 import { DashboardPage } from "./pages/DashboardPage";
 import { StoreProfilePage } from "./pages/StoreProfilePage";
 import { ManageCollectionsPage } from "./pages/ManageCollectionsPage";
@@ -13,6 +16,11 @@ import { LinkRedirectPage } from "./pages/LinkRedirectPage";
 import { CollectionPage } from "./pages/CollectionPage";
 import { LandingPage } from "./pages/LandingPage";
 import { RegisterPage } from "./pages/RegisterPage";
+import { AdminLoginPage } from "./pages/admin/AdminLoginPage";
+import { AdminStoresPage } from "./pages/admin/AdminStoresPage";
+import { AdminStoreDetailPage } from "./pages/admin/AdminStoreDetailPage";
+import { AdminPurchasesPage } from "./pages/admin/AdminPurchasesPage";
+import { AdminPurchaseDetailPage } from "./pages/admin/AdminPurchaseDetailPage";
 
 function TenantRoutes({ tenant }: { tenant: string }) {
   return (
@@ -57,11 +65,32 @@ function TenantRoutes({ tenant }: { tenant: string }) {
 
 function ApexRoutes() {
   return (
-    <Routes>
-      <Route path="/" element={<LandingPage />} />
-      <Route path="/register" element={<RegisterPage />} />
-      <Route path="*" element={<Navigate to="/" replace />} />
-    </Routes>
+    <AdminAuthProvider>
+      <Routes>
+        <Route path="/" element={<LandingPage />} />
+        <Route path="/register" element={<RegisterPage />} />
+        <Route path="/admin/login" element={<AdminLoginPage />} />
+        <Route
+          path="/admin"
+          element={
+            <AdminProtectedRoute>
+              <AdminLayout />
+            </AdminProtectedRoute>
+          }
+        >
+          <Route index element={<Navigate to="/admin/stores" replace />} />
+          <Route path="stores" element={<AdminStoresPage />} />
+          <Route path="stores/:storeId" element={<AdminStoreDetailPage />} />
+          <Route path="purchases" element={<AdminPurchasesPage />} />
+          <Route
+            path="purchases/:purchaseId"
+            element={<AdminPurchaseDetailPage />}
+          />
+          <Route path="*" element={<Navigate to="/admin/stores" replace />} />
+        </Route>
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
+    </AdminAuthProvider>
   );
 }
 

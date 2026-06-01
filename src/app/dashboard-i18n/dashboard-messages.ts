@@ -65,7 +65,10 @@ export type DashboardStrings = {
   failedLoadLinks: string;
   toastCopiedTitle: string;
   toastCopiedDescriptionSuffix: string;
-  emptyChartsHint: string;
+  emptyChartsNoLinks: string;
+  emptyChartsNoActivity: string;
+  emptyTopLinksNoLinks: string;
+  emptyTopLinksNoActivity: string;
   tooltipViewsWord: string;
   tooltipClicksWord: string;
   dashboardNavAria: string;
@@ -76,8 +79,19 @@ export type DashboardStrings = {
   profilePageDescription: string;
   profileSectionOwner: string;
   profileSectionOwnerHint: string;
+  profileSectionSocialLinks: string;
+  profileSectionSocialLinksHint: string;
+  profileSocialAddLabel: string;
+  profileSocialAddPlaceholder: string;
+  profileSocialAllAdded: string;
+  profileSocialEmpty: string;
+  profileSocialRemove: string;
+  profileSocialUsernameHint: string;
+  profileSocialLinkInvalid: (platform: string) => string;
   profileSectionStore: string;
   profileSectionStoreHint: string;
+  profileSectionStorefrontTheme: string;
+  profileSectionStorefrontThemeHint: string;
   fieldOwnerName: string;
   fieldOwnerEmail: string;
   fieldStoreTitle: string;
@@ -163,6 +177,9 @@ export type DashboardStrings = {
   collectionMinTwoLinks: string;
   collectionNoActiveLinks: string;
   collectionInactiveLinksExcluded: string;
+  collectionPickerSearchPlaceholder: string;
+  collectionPickerEmpty: string;
+  collectionPickerSelectedCount: (selected: number, total: number) => string;
   collectionLinksLabel: (n: number) => string;
   collectionExpiresShort: string;
   collectionToastCreated: string;
@@ -172,6 +189,57 @@ export type DashboardStrings = {
   collectionsEmpty: string;
   failedLoadCollections: string;
   collectionSlugLengthHint: string;
+  failedLoadDashboard: string;
+  profileBannerTitle: string;
+  profileBannerDescription: (completed: number, total: number) => string;
+  profileBannerProgress: string;
+  profileBannerCta: string;
+  profileBannerItem: (
+    key: "profileImage" | "storeTitle" | "storeDescription" | "storeBackground",
+  ) => string;
+  membershipTitle: string;
+  membershipDescription: string;
+  membershipRenewalWarning: string;
+  membershipExpiresOn: (date: string) => string;
+  membershipLimitCollections: string;
+  membershipLimitLinksPerCollection: string;
+  membershipUnlimited: string;
+  membershipCollectionsQuota: (used: number, allowed: number) => string;
+  membershipFeatureCustomLink: string;
+  membershipFeatureCustomLinkHint: string;
+  membershipFeatureCustomCollection: string;
+  membershipFeatureCustomCollectionHint: string;
+  membershipFeatureIncluded: string;
+  membershipFeatureDisabled: string;
+  membershipUpgradeTeaser: (planName: string) => string;
+  membershipUpgradePrice: (price: string, days: number) => string;
+  membershipUpgradeButton: string;
+  membershipPendingPurchase: string;
+  plusUpgradeDialogTitle: (planName: string) => string;
+  plusUpgradeDialogTitleReceipt: string;
+  plusUpgradeReceiptPendingHint: string;
+  plusUpgradeLoading: string;
+  plusUpgradeInvoiceAmount: string;
+  plusUpgradeBank: string;
+  plusUpgradeAccountNumber: string;
+  plusUpgradeReceiptLabel: string;
+  plusUpgradeReceiptHint: string;
+  plusUpgradePickReceipt: string;
+  plusUpgradeSubmitReceipt: string;
+  plusUpgradeSubmitting: string;
+  plusUpgradeSuccessTitle: string;
+  plusUpgradeSuccessBody: string;
+  plusUpgradeFailed: string;
+  plusUpgradeNoPendingPurchase: string;
+  plusUpgradeCopyAccount: string;
+  plusUpgradeCopied: string;
+  plusUpgradeClose: string;
+  trendsTitle: string;
+  trendsDescription: string;
+  topLinksTitle: string;
+  topLinksDescription: string;
+  statViewsSubtitlePeriod: string;
+  statClicksSubtitlePeriod: string;
 };
 
 export const dashboardLocales: Record<DashboardLocale, DashboardStrings> = {
@@ -225,7 +293,12 @@ export const dashboardLocales: Record<DashboardLocale, DashboardStrings> = {
     failedLoadLinks: "Failed to load links",
     toastCopiedTitle: "Short URL copied",
     toastCopiedDescriptionSuffix: "",
-    emptyChartsHint: "Add links to see charts",
+    emptyChartsNoLinks: "Add links to see activity charts here",
+    emptyChartsNoActivity:
+      "No views or clicks in the last 30 days yet. Share your links to start tracking.",
+    emptyTopLinksNoLinks: "Add links to see which ones get the most clicks",
+    emptyTopLinksNoActivity:
+      "No clicks yet. Your most-clicked links will show up here.",
     tooltipViewsWord: "views",
     tooltipClicksWord: "clicks",
     dashboardNavAria: "Dashboard sections",
@@ -238,9 +311,24 @@ export const dashboardLocales: Record<DashboardLocale, DashboardStrings> = {
     profileSectionOwner: "Owner account",
     profileSectionOwnerHint:
       "Your display name and avatar appear on the public storefront.",
+    profileSectionSocialLinks: "Social links",
+    profileSectionSocialLinksHint:
+      "Pick a network and enter your username — we build the correct profile link for you.",
+    profileSocialAddLabel: "Add network",
+    profileSocialAddPlaceholder: "Choose a social network…",
+    profileSocialAllAdded: "All networks added",
+    profileSocialEmpty: "No social links yet. Choose one from the list above.",
+    profileSocialRemove: "Remove",
+    profileSocialUsernameHint:
+      "Enter only your username (or phone for WhatsApp, domain for Website). No other sites.",
+    profileSocialLinkInvalid: (platform) =>
+      `${platform}: enter a valid username for this network`,
     profileSectionStore: "Public storefront",
     profileSectionStoreHint:
       "Title, description, and background shown on your store homepage.",
+    profileSectionStorefrontTheme: "Storefront theme",
+    profileSectionStorefrontThemeHint:
+      "How your public page looks to visitors. Two free themes; Plus unlocks premium styles. Saved in a cookie until API sync.",
     fieldOwnerName: "Display name",
     fieldOwnerEmail: "Email",
     fieldStoreTitle: "Store title",
@@ -339,6 +427,10 @@ export const dashboardLocales: Record<DashboardLocale, DashboardStrings> = {
       "You need at least two active links before you can create a collection.",
     collectionInactiveLinksExcluded:
       "Inactive links are hidden here because the API only allows active links in bundles.",
+    collectionPickerSearchPlaceholder: "Search links…",
+    collectionPickerEmpty: "No links match your search.",
+    collectionPickerSelectedCount: (selected, total) =>
+      `${selected} selected · ${total} link${total === 1 ? "" : "s"}`,
     collectionLinksLabel: (n) => `${n} link${n === 1 ? "" : "s"}`,
     collectionExpiresShort: "Expires",
     collectionToastCreated: "Collection created",
@@ -350,6 +442,69 @@ export const dashboardLocales: Record<DashboardLocale, DashboardStrings> = {
     failedLoadCollections: "Failed to load collections",
     collectionSlugLengthHint:
       "If you set a custom slug it must be 3–120 characters (a–z, 0–9, hyphen).",
+    failedLoadDashboard: "Failed to load dashboard",
+    profileBannerTitle: "Complete your storefront profile",
+    profileBannerDescription: (completed, total) =>
+      `${completed} of ${total} profile steps done — finish the rest so visitors trust your page.`,
+    profileBannerProgress: "Profile completion",
+    profileBannerCta: "Finish profile",
+    profileBannerItem: (key) =>
+      ({
+        profileImage: "Profile photo",
+        storeTitle: "Store title",
+        storeDescription: "Store description",
+        storeBackground: "Background image",
+      })[key],
+    membershipTitle: "Membership",
+    membershipDescription: "Your plan limits and features for this store.",
+    membershipRenewalWarning:
+      "Your Plus plan is ending soon. Renew to keep unlimited collections and custom slugs.",
+    membershipExpiresOn: (date) => `Expires ${date}`,
+    membershipLimitCollections: "Collections",
+    membershipLimitLinksPerCollection: "Links per collection",
+    membershipUnlimited: "Unlimited",
+    membershipCollectionsQuota: (used, allowed) =>
+      `${used} of ${allowed} collection slots used on this plan`,
+    membershipFeatureCustomLink: "Custom link paths",
+    membershipFeatureCustomLinkHint:
+      "Choose your own short URL when creating a link (e.g. /summer-sale).",
+    membershipFeatureCustomCollection: "Custom collection paths",
+    membershipFeatureCustomCollectionHint:
+      "Choose your own short URL when creating a link collection.",
+    membershipFeatureIncluded: "Included",
+    membershipFeatureDisabled: "Disabled",
+    membershipUpgradeTeaser: (planName) => `Upgrade to ${planName} for more`,
+    membershipUpgradePrice: (price, days) => `${price} / ${days} days`,
+    membershipUpgradeButton: "Upgrade to Plus",
+    membershipPendingPurchase:
+      "Plus payment pending — upload your transfer receipt or wait for admin verification.",
+    plusUpgradeDialogTitle: (planName) => `Upgrade to ${planName}`,
+    plusUpgradeDialogTitleReceipt: "Submit Plus payment",
+    plusUpgradeReceiptPendingHint:
+      "Transfer the exact amount below, then upload your receipt.",
+    plusUpgradeLoading: "Preparing payment details…",
+    plusUpgradeInvoiceAmount: "Transfer amount (exact)",
+    plusUpgradeBank: "Bank",
+    plusUpgradeAccountNumber: "Account number",
+    plusUpgradeReceiptLabel: "Transfer receipt",
+    plusUpgradeReceiptHint: "Upload a screenshot or PDF of your bank transfer.",
+    plusUpgradePickReceipt: "Choose file",
+    plusUpgradeSubmitReceipt: "Submit receipt",
+    plusUpgradeSubmitting: "Uploading…",
+    plusUpgradeSuccessTitle: "Receipt submitted",
+    plusUpgradeSuccessBody:
+      "We received your receipt. Plus activates after admin verification.",
+    plusUpgradeFailed: "Could not complete Plus purchase",
+    plusUpgradeNoPendingPurchase: "No pending Plus payment found.",
+    plusUpgradeCopyAccount: "Copy account number",
+    plusUpgradeCopied: "Account number copied",
+    plusUpgradeClose: "Close",
+    trendsTitle: "Views & clicks over time",
+    trendsDescription: "Daily totals for the last 30 days",
+    topLinksTitle: "Top clicked links",
+    topLinksDescription: "Links with the most clicks in your store",
+    statViewsSubtitlePeriod: "Last 30 days",
+    statClicksSubtitlePeriod: "Last 30 days",
   },
   id: {
     storeOverview: "Ringkasan toko",
@@ -402,7 +557,13 @@ export const dashboardLocales: Record<DashboardLocale, DashboardStrings> = {
     failedLoadLinks: "Gagal memuat tautan",
     toastCopiedTitle: "URL pendek disalin",
     toastCopiedDescriptionSuffix: "",
-    emptyChartsHint: "Tambah tautan untuk melihat grafik",
+    emptyChartsNoLinks: "Tambah tautan untuk melihat grafik aktivitas di sini",
+    emptyChartsNoActivity:
+      "Belum ada tayangan atau klik dalam 30 hari terakhir. Bagikan tautan Anda untuk mulai melacak.",
+    emptyTopLinksNoLinks:
+      "Tambah tautan untuk melihat tautan dengan klik terbanyak",
+    emptyTopLinksNoActivity:
+      "Belum ada klik. Tautan paling sering diklik akan muncul di sini.",
     tooltipViewsWord: "tayangan",
     tooltipClicksWord: "klik",
     dashboardNavAria: "Bagian dasbor",
@@ -415,9 +576,25 @@ export const dashboardLocales: Record<DashboardLocale, DashboardStrings> = {
     profileSectionOwner: "Akun pemilik",
     profileSectionOwnerHint:
       "Nama tampilan dan avatar Anda muncul di halaman toko publik.",
+    profileSectionSocialLinks: "Tautan sosial",
+    profileSectionSocialLinksHint:
+      "Pilih jaringan lalu isi username — kami yang menyusun tautan profil yang benar.",
+    profileSocialAddLabel: "Tambah jaringan",
+    profileSocialAddPlaceholder: "Pilih jaringan sosial…",
+    profileSocialAllAdded: "Semua jaringan sudah ditambahkan",
+    profileSocialEmpty:
+      "Belum ada tautan sosial. Pilih dari daftar di atas.",
+    profileSocialRemove: "Hapus",
+    profileSocialUsernameHint:
+      "Isi username saja (atau nomor untuk WhatsApp, domain untuk Website). Bukan situs lain.",
+    profileSocialLinkInvalid: (platform) =>
+      `${platform}: masukkan username yang valid untuk jaringan ini`,
     profileSectionStore: "Vitrin publik",
     profileSectionStoreHint:
       "Judul, deskripsi, dan latar belakang di halaman utama toko.",
+    profileSectionStorefrontTheme: "Tema etalase",
+    profileSectionStorefrontThemeHint:
+      "Tampilan halaman publik untuk pengunjung. Dua tema gratis; Plus membuka tema premium. Disimpan di cookie sampai API tersedia.",
     fieldOwnerName: "Nama tampilan",
     fieldOwnerEmail: "Email",
     fieldStoreTitle: "Judul toko",
@@ -517,6 +694,10 @@ export const dashboardLocales: Record<DashboardLocale, DashboardStrings> = {
       "Anda perlu minimal dua tautan aktif sebelum bisa membuat koleksi.",
     collectionInactiveLinksExcluded:
       "Tautan nonaktif disembunyikan karena API hanya mengizinkan tautan aktif dalam bundel.",
+    collectionPickerSearchPlaceholder: "Cari tautan…",
+    collectionPickerEmpty: "Tidak ada tautan yang cocok.",
+    collectionPickerSelectedCount: (selected, total) =>
+      `${selected} dipilih · ${total} tautan`,
     collectionLinksLabel: (n) => `${n} tautan`,
     collectionExpiresShort: "Berakhir",
     collectionToastCreated: "Koleksi dibuat",
@@ -528,5 +709,68 @@ export const dashboardLocales: Record<DashboardLocale, DashboardStrings> = {
     failedLoadCollections: "Gagal memuat koleksi",
     collectionSlugLengthHint:
       "Slug kustom minimal 3–120 karakter (a–z, 0–9, hubung).",
+    failedLoadDashboard: "Gagal memuat dasbor",
+    profileBannerTitle: "Lengkapi profil toko Anda",
+    profileBannerDescription: (completed, total) =>
+      `${completed} dari ${total} langkah profil selesai — lengkapi agar pengunjung percaya.`,
+    profileBannerProgress: "Kelengkapan profil",
+    profileBannerCta: "Lengkapi profil",
+    profileBannerItem: (key) =>
+      ({
+        profileImage: "Foto profil",
+        storeTitle: "Judul toko",
+        storeDescription: "Deskripsi toko",
+        storeBackground: "Gambar latar",
+      })[key],
+    membershipTitle: "Keanggotaan",
+    membershipDescription: "Batas dan fitur paket untuk toko ini.",
+    membershipRenewalWarning:
+      "Paket Plus segera berakhir. Perpanjang untuk tetap unlimited dan slug kustom.",
+    membershipExpiresOn: (date) => `Berakhir ${date}`,
+    membershipLimitCollections: "Koleksi",
+    membershipLimitLinksPerCollection: "Tautan per koleksi",
+    membershipUnlimited: "Tak terbatas",
+    membershipCollectionsQuota: (used, allowed) =>
+      `${used} dari ${allowed} slot koleksi terpakai`,
+    membershipFeatureCustomLink: "Path tautan kustom",
+    membershipFeatureCustomLinkHint:
+      "Pilih URL pendek sendiri saat membuat tautan (mis. /promo-liburan).",
+    membershipFeatureCustomCollection: "Path koleksi kustom",
+    membershipFeatureCustomCollectionHint:
+      "Pilih URL pendek sendiri saat membuat koleksi tautan.",
+    membershipFeatureIncluded: "Termasuk",
+    membershipFeatureDisabled: "Nonaktif",
+    membershipUpgradeTeaser: (planName) => `Upgrade ke ${planName} untuk lebih`,
+    membershipUpgradePrice: (price, days) => `${price} / ${days} hari`,
+    membershipUpgradeButton: "Upgrade ke Plus",
+    membershipPendingPurchase:
+      "Pembayaran Plus menunggu — unggah bukti transfer atau tunggu verifikasi admin.",
+    plusUpgradeDialogTitle: (planName) => `Upgrade ke ${planName}`,
+    plusUpgradeDialogTitleReceipt: "Kirim pembayaran Plus",
+    plusUpgradeReceiptPendingHint:
+      "Transfer sesuai jumlah di bawah, lalu unggah bukti transfer.",
+    plusUpgradeLoading: "Menyiapkan detail pembayaran…",
+    plusUpgradeInvoiceAmount: "Jumlah transfer (tepat)",
+    plusUpgradeBank: "Bank",
+    plusUpgradeAccountNumber: "Nomor rekening",
+    plusUpgradeReceiptLabel: "Bukti transfer",
+    plusUpgradeReceiptHint: "Unggah tangkapan layar atau PDF bukti transfer.",
+    plusUpgradePickReceipt: "Pilih berkas",
+    plusUpgradeSubmitReceipt: "Kirim bukti",
+    plusUpgradeSubmitting: "Mengunggah…",
+    plusUpgradeSuccessTitle: "Bukti terkirim",
+    plusUpgradeSuccessBody:
+      "Bukti diterima. Plus aktif setelah verifikasi admin.",
+    plusUpgradeFailed: "Tidak dapat menyelesaikan pembelian Plus",
+    plusUpgradeNoPendingPurchase: "Tidak ada pembayaran Plus yang menunggu.",
+    plusUpgradeCopyAccount: "Salin nomor rekening",
+    plusUpgradeCopied: "Nomor rekening disalin",
+    plusUpgradeClose: "Tutup",
+    trendsTitle: "Tayangan & klik over time",
+    trendsDescription: "Total harian 30 hari terakhir",
+    topLinksTitle: "Tautan paling diklik",
+    topLinksDescription: "Tautan dengan klik terbanyak di toko Anda",
+    statViewsSubtitlePeriod: "30 hari terakhir",
+    statClicksSubtitlePeriod: "30 hari terakhir",
   },
 };
